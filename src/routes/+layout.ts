@@ -1,4 +1,5 @@
 import type { Facility } from '$lib/Interfaces/facility.interface';
+import type { DeviceDataHistory } from '$lib/Interfaces/deviceDataHistory.interface';
 import type { DeviceStatus } from '$lib/types/DeviceStatus.type';
 
 interface Location {
@@ -17,6 +18,7 @@ interface Device {
 	lastSeen: string;
 	status: DeviceStatus;
 	hasAlert: boolean;
+	data: DeviceDataHistory[];
 }
 
 export const load = () => {
@@ -43,7 +45,28 @@ export const load = () => {
 			humidity: 42,
 			lastSeen: '2025-11-26T10:01:00Z',
 			status: 'online',
-			hasAlert: false
+			hasAlert: false,
+			data: [
+				{
+					timestamp: '2025-11-26T10:00:00Z',
+					temperature: -18.3,
+					humidity: 43,
+					alert: false
+				},
+				{
+					timestamp: '2025-11-26T09:00:00Z',
+					temperature: -17.8,
+					humidity: 45,
+					alert: false
+				},
+				{
+					timestamp: '2025-11-26T08:00:00Z',
+					temperature: -16.5,
+					humidity: 51,
+					alert: true,
+					note: 'Door held open'
+				}
+			]
 		},
 		{
 			id: 'd2',
@@ -54,7 +77,28 @@ export const load = () => {
 			humidity: 60,
 			lastSeen: '2025-11-26T09:55:00Z',
 			status: 'alert',
-			hasAlert: true
+			hasAlert: true,
+			data: [
+				{
+					timestamp: '2025-11-26T10:00:00Z',
+					temperature: -16.1,
+					humidity: 61,
+					alert: true,
+					note: 'Exceeds temp threshold'
+				},
+				{
+					timestamp: '2025-11-26T09:00:00Z',
+					temperature: -15.4,
+					humidity: 58,
+					alert: false
+				},
+				{
+					timestamp: '2025-11-26T08:00:00Z',
+					temperature: -14.9,
+					humidity: 56,
+					alert: false
+				}
+			]
 		},
 		{
 			id: 'd3',
@@ -65,7 +109,28 @@ export const load = () => {
 			humidity: 78,
 			lastSeen: '2025-11-26T09:40:00Z',
 			status: 'offline',
-			hasAlert: true
+			hasAlert: true,
+			data: [
+				{
+					timestamp: '2025-11-26T09:30:00Z',
+					temperature: 4.5,
+					humidity: 80,
+					alert: true,
+					note: 'Sensor offline'
+				},
+				{
+					timestamp: '2025-11-26T08:30:00Z',
+					temperature: 4.2,
+					humidity: 77,
+					alert: true
+				},
+				{
+					timestamp: '2025-11-26T07:30:00Z',
+					temperature: 3.9,
+					humidity: 74,
+					alert: false
+				}
+			]
 		},
 		{
 			id: 'd4',
@@ -76,7 +141,27 @@ export const load = () => {
 			humidity: 55,
 			lastSeen: '2025-11-26T10:02:00Z',
 			status: 'loading',
-			hasAlert: false
+			hasAlert: false,
+			data: [
+				{
+					timestamp: '2025-11-26T10:00:00Z',
+					temperature: 8.2,
+					humidity: 54,
+					alert: false
+				},
+				{
+					timestamp: '2025-11-26T09:00:00Z',
+					temperature: 8.5,
+					humidity: 55,
+					alert: false
+				},
+				{
+					timestamp: '2025-11-26T08:00:00Z',
+					temperature: 8.1,
+					humidity: 53,
+					alert: false
+				}
+			]
 		}
 	];
 

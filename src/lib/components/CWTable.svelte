@@ -10,12 +10,19 @@
 	type ColumnFilter = { type: 'checkbox'; options: ColumnFilterOption[] };
 
 	type BadgeEntry = { label?: string; dotClass?: string; badgeClass?: string };
+	type ButtonConfig<T = unknown> = {
+		label: string;
+		variant?: 'primary' | 'ghost';
+		onClick?: (row: T) => void;
+		class?: string;
+	};
+
 	type ColumnConfig = {
 		key: string;
 		label: string;
 		value?: string;
 		secondaryKey?: string;
-		type?: 'text' | 'number' | 'datetime' | 'stacked' | 'badge';
+		type?: 'text' | 'number' | 'datetime' | 'stacked' | 'badge' | 'buttons';
 		suffix?: string;
 		align?: 'left' | 'center' | 'right';
 		sortable?: boolean;
@@ -24,6 +31,7 @@
 		filter?: ColumnFilter;
 		width?: string;
 		cellClass?: string;
+		buttons?: ButtonConfig[];
 	};
 
 	const defaultFilter: FilterFn<unknown> = (item, search) => {
@@ -83,7 +91,7 @@
 		const defaults: Record<string, string[]> = {};
 		for (const col of columns) {
 			if (col.filter?.type === 'checkbox') {
-				defaults[col.key] = col.filter.options.map((o) => o.value);
+				defaults[col.key] = col.filter.options.map((o: ColumnFilterOption) => o.value);
 			}
 		}
 		return defaults;
@@ -92,7 +100,7 @@
 	let columnFilters = $state<Record<string, string[]>>(buildDefaultFilters());
 	let pendingColumnFilters = $state<Record<string, string[]>>(buildDefaultFilters());
 	let pendingSortKey = $state<string>(sortKey || (columns[0]?.key ?? ''));
-	let pendingSortDir = $state<SortDir>(sortDir);
+	let pendingSortDir = $state<SortDir>(sortDir as SortDir);
 	let openColumn = $state<string | null>(null);
 
 	let scrollTop = $state(0);
@@ -198,12 +206,15 @@
 		if (col.type === 'datetime') {
 			return (new Date(left as string).getTime() - new Date(right as string).getTime()) * dirMul;
 		}
+		if (col.type === 'buttons') {
+			return 0;
+		}
 		return String(left ?? '').localeCompare(String(right ?? '')) * dirMul;
 	};
 
 	let sorted = $derived.by(() => {
 		if (!sortKey) return [...filtered];
-		return [...filtered].sort((a, b) => columnSort(a, b, sortKey, sortDir));
+		return [...filtered].sort((a, b) => columnSort(a, b, sortKey, sortDir as SortDir));
 	});
 
 	let total = $derived(sorted.length);
@@ -355,7 +366,7 @@
 		openColumn = null;
 		setPendingFilters({ ...columnFilters });
 		pendingSortKey = sortKey;
-		pendingSortDir = sortDir;
+		pendingSortDir = sortDir as SortDir;
 	};
 
 	const alignClass = (align?: string) => {
@@ -363,20 +374,27 @@
 		if (align === 'center') return 'text-center';
 		return 'text-left';
 	};
+
+	const buttonClasses = (variant?: string) => {
+		if (variant === 'ghost') {
+			return 'rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200 hover:bg-slate-800';
+		}
+		return 'rounded-md bg-sky-500 px-3 py-1 text-[11px] font-medium text-slate-950 shadow-sm transition hover:bg-sky-400';
+	};
 </script>
 
 <div class={`cw-table flex h-full w-full flex-col text-xs text-slate-200 ${className}`}>
 	<div
 		class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/60 px-4 py-3"
 	>
-		<div class="flex items-center gap-2">
+		<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
 			<label class="text-slate-400" for="table-search">Search</label>
-			<div class="relative">
+			<div class="relative flex-1 sm:flex-none">
 				<input
 					id="table-search"
 					value={search}
 					oninput={(event) => setSearch(event.currentTarget.value)}
-					class="w-64 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 shadow-sm outline-none ring-1 ring-slate-800 focus:border-sky-500 focus:ring-sky-500"
+					class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 shadow-sm outline-none ring-1 ring-slate-800 focus:border-sky-500 focus:ring-sky-500 sm:w-64"
 					placeholder="Search rows..."
 				/>
 				{#if search}
@@ -392,7 +410,7 @@
 			</div>
 		</div>
 
-		<div class="flex flex-wrap items-center gap-3">
+		<div class="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
 			<button
 				type="button"
 				class={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[11px] transition ${
@@ -435,14 +453,14 @@
 			bind:clientHeight={containerHeight}
 			style={virtual ? `max-height:${viewportHeight}px` : ''}
 		>
-			<table class="min-w-full text-xs text-slate-100">
+			<table class="w-full min-w-[280px] table-auto text-[10px] text-slate-100 sm:text-[11px]">
 				<thead class="sticky top-0 bg-slate-900/90 text-slate-300 backdrop-blur">
 					{#if header}
 						{@render header(tableContext)}
 					{:else if columns.length}
-						<tr class="border-b border-slate-800 text-[11px] uppercase tracking-wide">
+						<tr class="border-b border-slate-800 text-[10px] md:text-[11px] uppercase tracking-wide">
 							{#each columns as col (col.key)}
-								<th class={`relative px-3 py-2 ${alignClass(col.align)}`} style={col.width ?? ''}>
+								<th class={`relative px-2 md:px-3 py-2 ${alignClass(col.align)}`} style={col.width ?? ''}>
 									<button
 										class="inline-flex items-center gap-1 rounded-md px-1.5 py-1 hover:bg-slate-800/80"
 										onclick={() => {
@@ -451,7 +469,7 @@
 											} else {
 												openColumn = col.key;
 												pendingSortKey = col.key;
-												pendingSortDir = sortDir;
+												pendingSortDir = sortDir as SortDir;
 												setPendingFilters({ ...columnFilters });
 											}
 										}}
@@ -552,7 +570,7 @@
 								</th>
 							{/each}
 							{#if actions}
-								<th class="px-3 py-2 text-right">Actions</th>
+								<th class="px-2 md:px-3 py-2 text-right">Actions</th>
 							{/if}
 						</tr>
 					{:else}
@@ -581,7 +599,7 @@
 						{/if}
 					{:else if virtual}
 						{#if topSpacer > 0}
-							<tr aria-hidden="true" style={`height:${topSpacer}px`}></tr>
+							<tr class="spacer-row" aria-hidden="true" style={`height:${topSpacer}px`}></tr>
 						{/if}
 
 						{#if row}
@@ -594,8 +612,9 @@
 									{#if columns.length}
 										{#each columns as col (col.key)}
 											<td
-												class={`px-3 py-2 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
+												class={`px-2 md:px-3 py-2 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
 												style={col.width ?? ''}
+												data-label={col.label}
 											>
 												{#if col.type === 'badge' && col.badges}
 													{@const raw = getColumnValue(item, col)}
@@ -636,6 +655,18 @@
 														<span class="font-mono text-[13px] text-slate-50">
 															{Number(raw).toLocaleString()}{col.suffix ?? ''}
 														</span>
+													{:else if col.type === 'buttons' && col.buttons?.length}
+														<div class="flex flex-wrap items-center justify-end gap-2">
+															{#each col.buttons as btn, bIdx (bIdx)}
+																<button
+																	class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
+																	type="button"
+																	onclick={() => btn.onClick?.(item)}
+																>
+																	{btn.label}
+																</button>
+															{/each}
+														</div>
 													{:else}
 														<span class="text-slate-50">
 															{raw}{col.suffix ?? ''}
@@ -645,12 +676,12 @@
 											</td>
 										{/each}
 										{#if actions}
-											<td class="whitespace-nowrap px-3 py-2 align-middle text-right">
+											<td class="whitespace-nowrap px-2 md:px-3 py-2 align-middle text-right" data-label="Actions">
 												{@render actions(item, startIndex + idx, tableContext)}
 											</td>
 										{/if}
 									{:else}
-										<td class="px-3 py-2 text-slate-200">
+										<td class="px-2 md:px-3 py-2 text-slate-200">
 											<pre class="text-xs text-slate-400">{JSON.stringify(item, null, 2)}</pre>
 										</td>
 									{/if}
@@ -659,7 +690,7 @@
 						{/if}
 
 						{#if bottomSpacer > 0}
-							<tr aria-hidden="true" style={`height:${bottomSpacer}px`}></tr>
+							<tr class="spacer-row" aria-hidden="true" style={`height:${bottomSpacer}px`}></tr>
 						{/if}
 					{:else if row}
 						{#each paginated as item, idx (getRowId(item, (page - 1) * pageSize + idx))}
@@ -667,12 +698,13 @@
 						{/each}
 					{:else}
 						{#each paginated as item, idx (getRowId(item, (page - 1) * pageSize + idx))}
-							<tr class="border-t border-slate-900/80 even:bg-slate-900/50">
+							<tr class="border-t border-slate-900/80 even:bg-slate-900/50 hover:bg-blue-800/70">
 								{#if columns.length}
 									{#each columns as col (col.key)}
 										<td
-											class={`px-3 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
+											class={`px-2 md:px-3 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
 											style={col.width ?? ''}
+											data-label={col.label}
 										>
 											{#if col.type === 'badge' && col.badges}
 												{@const raw = getColumnValue(item, col)}
@@ -708,26 +740,38 @@
 													{raw ? new Date(raw as string).toLocaleString() : ''}
 												</span>
 											{:else}
-												{@const raw = getColumnValue(item, col)}
-												{#if col.type === 'number'}
-													<span class="font-mono text-[13px] text-slate-50">
-														{Number(raw).toLocaleString()}{col.suffix ?? ''}
-													</span>
-												{:else}
-													<span class="text-slate-50">
-														{raw}{col.suffix ?? ''}
-													</span>
+													{@const raw = getColumnValue(item, col)}
+													{#if col.type === 'number'}
+														<span class="font-mono text-[13px] text-slate-50">
+															{Number(raw).toLocaleString()}{col.suffix ?? ''}
+														</span>
+													{:else if col.type === 'buttons' && col.buttons?.length}
+														<div class="flex flex-wrap items-center gap-2">
+															{#each col.buttons as btn, bIdx (bIdx)}
+																<button
+																	class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
+																	type="button"
+																	onclick={() => btn.onClick?.(item)}
+																>
+																	{btn.label}
+																</button>
+															{/each}
+														</div>
+													{:else}
+														<span class="text-slate-50">
+															{raw}{col.suffix ?? ''}
+														</span>
+													{/if}
 												{/if}
-											{/if}
 										</td>
 									{/each}
 									{#if actions}
-										<td class="whitespace-nowrap px-3 align-middle text-right">
+										<td class="whitespace-nowrap px-2 md:px-3 align-middle text-right" data-label="Actions">
 											{@render actions(item, (page - 1) * pageSize + idx, tableContext)}
 										</td>
 									{/if}
 								{:else}
-									<td class="px-3 text-slate-200">
+									<td class="px-2 md:px-3 text-slate-200">
 										<pre class="text-xs text-slate-400">{JSON.stringify(item, null, 2)}</pre>
 									</td>
 								{/if}
@@ -738,11 +782,11 @@
 			</table>
 		</div>
 	</div>
-	<span class="flex-grow"></span>
+	<span class="flex-grow hidden md:flex"></span>
 	<div
-		class="flex items-center justify-between border-t border-slate-800 bg-slate-950/60 px-4 py-3"
+		class="flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-4 py-3 text-[11px] text-slate-200 sm:flex-row sm:items-center sm:justify-between"
 	>
-		<div class="flex items-center gap-2 text-[11px] text-slate-200">
+		<div class="flex items-center gap-2">
 			<button
 				type="button"
 				class="rounded-md bg-slate-900 px-2 py-1 text-slate-200 ring-1 ring-slate-700 transition enabled:hover:bg-slate-800 disabled:opacity-50"
@@ -775,3 +819,42 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	@media (max-width: 640px) {
+		:global(.cw-table thead) {
+			display: none;
+		}
+
+		:global(.cw-table tbody tr:not(.spacer-row)) {
+			display: flex;
+			flex-direction: column;
+			gap: 0.35rem;
+			margin-bottom: 1rem;
+			border: 1px solid rgb(30 41 59 / 0.6);
+			border-radius: 0.9rem;
+			background: rgba(15, 23, 42, 0.9);
+			padding: 0.85rem 1rem;
+		}
+
+		:global(.cw-table tbody tr:not(.spacer-row) td) {
+			display: flex;
+			justify-content: space-between;
+			gap: 1rem;
+			padding: 0.25rem 0;
+			border: none;
+		}
+
+		:global(.cw-table tbody tr:not(.spacer-row) td::before) {
+			content: attr(data-label);
+			text-transform: uppercase;
+			font-size: 0.65rem;
+			letter-spacing: 0.08em;
+			color: rgb(148 163 184 / 0.8);
+		}
+
+		:global(.cw-table tbody tr:not(.spacer-row) td > :where(span, div)) {
+			text-align: right;
+		}
+	}
+</style>

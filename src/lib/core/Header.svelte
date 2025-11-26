@@ -3,16 +3,33 @@
 	import { page } from '$app/state';
 	import logo from '$lib/images/svelte-logo.svg';
 	import github from '$lib/images/github.svg';
+
+	function toggleSidebar() {
+		if (typeof window === 'undefined') return;
+		window.dispatchEvent(new CustomEvent('sidebar:toggle'));
+	}
 </script>
 
-<header>
-	<div class="corner">
-		<a href="https://svelte.dev/docs/kit">
-			<img src={logo} alt="SvelteKit" />
-		</a>
+<header class="flex items-center justify-between border-b border-slate-800 bg-slate-900/70 px-4 py-2">
+	<div class="flex items-center gap-3">
+		<button
+			type="button"
+			onclick={toggleSidebar}
+			class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 text-slate-100 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 md:hidden"
+			aria-label="Toggle sidebar"
+		>
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+				<path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
+			</svg>
+		</button>
+		<div class="corner">
+			<a href="https://svelte.dev/docs/kit">
+				<img src={logo} alt="SvelteKit" />
+			</a>
+		</div>
 	</div>
 
-	<nav>
+	<nav class="hidden md:flex">
 		<svg viewBox="0 0 2 3" aria-hidden="true">
 			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
 		</svg>
@@ -20,11 +37,8 @@
 			<li aria-current={page.url.pathname === '/' ? 'page' : undefined}>
 				<a href={resolve('/')}>Home</a>
 			</li>
-			<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
-				<a href={resolve('/about')}>About</a>
-			</li>
-			<li aria-current={page.url.pathname.startsWith('/sverdle') ? 'page' : undefined}>
-				<a href={resolve('/sverdle')}>Sverdle</a>
+			<li aria-current={page.url.pathname.startsWith('/locations') ? 'page' : undefined}>
+				<a href={resolve('/locations')}>Locations</a>
 			</li>
 		</ul>
 		<svg viewBox="0 0 2 3" aria-hidden="true">
@@ -67,7 +81,7 @@
 	nav {
 		display: flex;
 		justify-content: center;
-		--background: rgba(255, 255, 255, 0.7);
+		--background: rgba(52, 88, 250, 0.7);
 	}
 
 	svg {

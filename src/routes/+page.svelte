@@ -116,6 +116,19 @@
 			type: 'stacked',
 			secondaryKey: 'locationName',
 			sortable: true
+		},
+		{
+			key: 'Actions',
+			label: 'Actions',
+			type: 'buttons',
+			buttons: [
+				{
+					label: 'View',
+					onClick: (item: Device) => {
+						window.location.href = `/locations/location/${item.locationId}/devices/device/${item.id}?prev=${window.location.pathname}`;
+					},
+				}
+			],
 		}
 	];
 
@@ -203,7 +216,7 @@
 		<section class="flex-1 overflow-hidden">
 			<div class="flex h-full flex-col overflow-hidden px-6 pb-6 pt-2">
 				<div
-					class="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-950/80"
+					class="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#21213c]"
 				>
 					<CWTable
 						items={tableRows}

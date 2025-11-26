@@ -24,8 +24,8 @@
 	);
 
 	const total = $derived(devices.length);
-	const alerts = $derived(devices.filter((d) => d.hasAlert).length);
-	const offline = $derived(devices.filter((d) => d.status === 'offline').length);
+	const alerts = $derived(devices.filter((d: Device) => d.hasAlert).length);
+	const offline = $derived(devices.filter((d: Device) => d.status === 'offline').length);
 </script>
 
 <div class="app flex min-h-screen flex-col bg-slate-950 text-slate-100">
