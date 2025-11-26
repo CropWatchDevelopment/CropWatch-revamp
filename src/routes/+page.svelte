@@ -1,0 +1,225 @@
+<script lang="ts">
+	import CWTable from '$lib/components/CWTable.svelte';
+	import type { DeviceStatus } from '$lib/types/DeviceStatus.type';
+	import type { Facility } from '$lib/Interfaces/facility.interface';
+	import type { Location } from '$lib/Interfaces/location.interface';
+	import type { Device } from '$lib/Interfaces/device.interface';
+
+	let { data } = $props<{
+		data: {
+			facilities: Facility[];
+			locations: Location[];
+			devices: Device[];
+		};
+	}>();
+
+	const facilities = data?.facilities ?? [];
+	const locations = data?.locations ?? [];
+	const devices = data?.devices ?? [];
+
+	let selectedFacilityId = $state<string | 'all'>('all');
+	let selectedLocationId = $state<string | 'all'>('all');
+
+	// Status helpers
+	const statusConfig: Record<
+		DeviceStatus,
+		{ label: string; dotClass: string; badgeClass: string }
+	> = {
+		online: {
+			label: 'Online',
+			dotClass: 'bg-emerald-500',
+			badgeClass: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
+		},
+		offline: {
+			label: 'Offline',
+			dotClass: 'bg-rose-500',
+			badgeClass: 'bg-rose-50 text-rose-700 ring-1 ring-rose-100'
+		},
+		loading: {
+			label: 'Loading',
+			dotClass: 'bg-slate-400',
+			badgeClass: 'bg-slate-50 text-slate-700 ring-1 ring-slate-100'
+		},
+		alert: {
+			label: 'Alert',
+			dotClass: 'bg-amber-500',
+			badgeClass: 'bg-amber-50 text-amber-800 ring-1 ring-amber-100'
+		}
+	};
+
+	const getFacility = (id: string) => facilities.find((f) => f.id === id);
+	const getLocation = (id: string) => locations.find((l) => l.id === id);
+	const STATUS_TYPES: DeviceStatus[] = ['online', 'offline', 'loading', 'alert'];
+
+	const deviceMatchesSearch = (d: Device, q: string) => {
+		if (!q?.trim()) return true;
+		const facility = getFacility(d.facilityId);
+		const location = getLocation(d.locationId);
+		const haystack = [d.id, d.name, facility?.name, facility?.code, location?.name]
+			.filter(Boolean)
+			.join(' ')
+			.toLowerCase();
+		return haystack.includes(q.toLowerCase());
+	};
+
+	const filteredDevices = $derived.by(() => {
+		let list = devices;
+
+		if (selectedFacilityId !== 'all') {
+			list = list.filter((d) => d.facilityId === selectedFacilityId);
+		}
+
+		if (selectedLocationId !== 'all') {
+			list = list.filter((d) => d.locationId === selectedLocationId);
+		}
+
+		return list;
+	});
+
+	const total = $derived(filteredDevices?.length);
+	const alerts = $derived(filteredDevices?.filter((d) => d.hasAlert).length);
+	const offline = $derived(filteredDevices?.filter((d) => d.status === 'offline').length);
+
+	const statusOptions = STATUS_TYPES?.map((s) => ({
+		value: s,
+		label: statusConfig[s].label
+	}));
+
+	const statusBadges = STATUS_TYPES.reduce<
+		Record<string, { label: string; dotClass: string; badgeClass: string }>
+	>((acc, key) => {
+		const cfg = statusConfig[key];
+		acc[key] = { label: cfg.label, dotClass: cfg.dotClass, badgeClass: cfg.badgeClass };
+		return acc;
+	}, {});
+
+	const tableColumns = [
+		{ key: 'name', label: 'Device', type: 'stacked', secondaryKey: 'id', sortable: true },
+		{ key: 'temperatureC', label: 'Temp', type: 'number', suffix: ' °C', sortable: true },
+		{ key: 'humidity', label: 'Humidity', type: 'number', suffix: ' %RH', sortable: true },
+		{
+			key: 'status',
+			label: 'Status',
+			type: 'badge',
+			sortable: true,
+			sortOrder: ['alert', 'offline', 'online', 'loading'],
+			filter: {
+				type: 'checkbox',
+				options: statusOptions
+			},
+			badges: statusBadges
+		},
+		{ key: 'lastSeen', label: 'Last seen', type: 'datetime', sortable: true },
+		{
+			key: 'facilityName',
+			label: 'Facility / Location',
+			type: 'stacked',
+			secondaryKey: 'locationName',
+			sortable: true
+		}
+	];
+
+	const tableRows = $derived(
+		filteredDevices?.map((d) => {
+			const facility = getFacility(d.facilityId);
+			const location = getLocation(d.locationId);
+			return {
+				...d,
+				facilityName: facility?.name ?? 'Unknown facility',
+				locationName: location?.name ?? 'Unknown location'
+			};
+		})
+	);
+</script>
+
+<div class="flex h-screen bg-slate-950 text-slate-50">
+	<!-- Main content -->
+	<main class="flex flex-1 flex-col bg-slate-950">
+		<!-- Top toolbar -->
+		<header class="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+			<div class="flex items-center justify-between px-6 py-3">
+				<div class="flex flex-col gap-1">
+					<div class="flex items-center gap-2 text-xs text-slate-400">
+						<span>Facility</span>
+						<span class="text-slate-600">/</span>
+						<span class="truncate">
+							{selectedFacilityId === 'all'
+								? 'All facilities'
+								: (getFacility(selectedFacilityId)?.name ?? 'Unknown')}
+						</span>
+						{#if selectedLocationId !== 'all'}
+							<span class="text-slate-600">/</span>
+							<span class="truncate">
+								{getLocation(selectedLocationId)?.name ?? 'Unknown location'}
+							</span>
+						{/if}
+					</div>
+					<h1 class="text-base font-semibold text-slate-50">Temperature & humidity devices</h1>
+				</div>
+
+				<div class="flex items-center gap-3 text-xs">
+					<div
+						class="flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300 ring-1 ring-emerald-500/30"
+					>
+						<span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+						<span>Online</span>
+					</div>
+					<div
+						class="flex items-center gap-1 rounded-full bg-rose-500/10 px-3 py-1 text-rose-300 ring-1 ring-rose-500/30"
+					>
+						<span class="h-2 w-2 rounded-full bg-rose-400"></span>
+						<span>Offline</span>
+					</div>
+					<div
+						class="flex items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1 text-amber-300 ring-1 ring-amber-500/30"
+					>
+						<span class="h-2 w-2 rounded-full bg-amber-400"></span>
+						<span>Has alert</span>
+					</div>
+				</div>
+			</div>
+
+			<div
+				class="flex items-center justify-between gap-3 border-t border-slate-800 px-6 py-3 text-xs"
+			>
+				<div class="flex flex-wrap items-center gap-3 text-slate-400">
+					<span class="flex items-center gap-1">
+						<span class="font-mono text-slate-100">{total}</span>
+						<span>devices in view</span>
+					</span>
+					<span class="flex items-center gap-1 text-amber-200">
+						<span class="font-mono">{alerts}</span>
+						<span>with alerts</span>
+					</span>
+					<span class="flex items-center gap-1 text-rose-300">
+						<span class="font-mono">{offline}</span>
+						<span>offline</span>
+					</span>
+				</div>
+			</div>
+		</header>
+
+		<!-- Device table -->
+		<section class="flex-1 overflow-hidden">
+			<div class="flex h-full flex-col overflow-hidden px-6 pb-6 pt-2">
+				<div
+					class="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-950/80"
+				>
+					<CWTable
+						items={tableRows}
+						columns={tableColumns}
+						filterFn={(item, q) => deviceMatchesSearch(item as Device, q)}
+						storageKey="cwtable_header_filters"
+						pageSize={12}
+						rowHeight={64}
+						viewportHeight={520}
+						class="h-full"
+						virtual={tableRows?.length > 30}
+					/>
+				</div>
+
+				<!-- CWTable now supports pagination and virtual scrolling for large result sets -->
+			</div>
+		</section>
+	</main>
+</div>
