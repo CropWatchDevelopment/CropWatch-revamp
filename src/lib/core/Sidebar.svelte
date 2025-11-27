@@ -278,7 +278,7 @@
 
 			<div>
 				<h2
-					class={`${
+					class={`flex flex-1 ${
 						shouldShowLabels
 							? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
 							: 'sr-only'

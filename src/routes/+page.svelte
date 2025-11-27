@@ -7,6 +7,8 @@
 	import type { Device } from '$lib/Interfaces/device.interface';
 
 	import { useAppState } from '$lib/data/AppState.svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { startDeviceRealtime } from '$lib/data/SourceOfTruth.svelte';
 
 	const getAppState = useAppState();
 	let appState = $derived(getAppState());
@@ -142,6 +144,16 @@
 			};
 		})
 	);
+
+	let stopRealtime: (() => void) | null = null;
+
+	onMount(async () => {
+		stopRealtime = await startDeviceRealtime(appState);
+	});
+
+	onDestroy(() => {
+		if (stopRealtime) stopRealtime();
+	});
 </script>
 
 <div class="flex h-screen min-h-0 overflow-hidden bg-slate-950 text-slate-50">
@@ -224,7 +236,7 @@
 						storageKey="cwtable_header_filters"
 						pageSize={12}
 						rowHeight={64}
-						class="h-full flex-1"
+						class="h-full flex-1 text-sm"
 						virtual={tableRows?.length > 30}
 					/>
 				</div>

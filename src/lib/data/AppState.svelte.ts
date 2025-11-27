@@ -16,17 +16,17 @@ export function createAppState(initial: AppState) {
 	});
 
 	// Demo data ticker: nudge device readings every 2s
-	$effect(() => {
-		const interval = setInterval(() => {
-			appState.devices = appState.devices.map((device) => {
-				const delta = (Math.random() * 2 - 1).toFixed(1);
-				const temperatureC = parseFloat((device.temperatureC + parseFloat(delta)).toFixed(1));
-				return { ...device, temperatureC };
-			});
-		}, 2000);
+	// $effect(() => {
+	// 	const interval = setInterval(() => {
+	// 		appState.devices = appState.devices.map((device) => {
+	// 			const delta = (Math.random() * 2 - 1).toFixed(1);
+	// 			const temperature_c = parseFloat((device.temperature_c + parseFloat(delta)).toFixed(1));
+	// 			return { ...device, temperature_c };
+	// 		});
+	// 	}, 2000);
 
-		return () => clearInterval(interval);
-	});
+	// 	return () => clearInterval(interval);
+	// });
 
 	return appState;
 }

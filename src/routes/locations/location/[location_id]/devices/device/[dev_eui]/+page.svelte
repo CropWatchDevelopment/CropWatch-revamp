@@ -2,9 +2,10 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import DeviceHeatmap from '$lib/components/DeviceHeatmap.svelte';
+	import { fetchDeviceHistory } from '$lib/data/SourceOfTruth.svelte';
 	import type { Device } from '$lib/Interfaces/device.interface';
 	import type { DeviceDataHistory } from '$lib/Interfaces/deviceDataHistory.interface';
-	import { getContext } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 
 	const getAppState = getContext<AppState>('appState');
@@ -14,41 +15,64 @@
 		appState.devices.find((d: Device) => d.id === page.params.dev_eui)
 	);
 
-	const baseTimestamp = new Date('2025-11-26T06:00:00Z').getTime();
+	let history: DeviceDataHistory[] = $state([]);
+	let historyLoading = $state(true);
+	let historyError: string | null = $state(null);
 
-	const history: DeviceDataHistory[] = Array.from({ length: 24 }, (_, index) => {
-		const ts = new Date(baseTimestamp - index * 60 * 60 * 1000);
-		const sineSeed = Math.sin((Math.PI * (24 - index)) / 12);
-		const temp = parseFloat((-2.5 + sineSeed * 7).toFixed(1));
-		const humidity = Math.round(
-			55 + Math.cos((Math.PI * (24 - index)) / 9) * 12 + (index % 5 === 0 ? 6 : 0)
-		);
-		const alert = temp < -8 || temp > 6 || humidity > 78;
+	onMount(async () => {
+		historyLoading = true;
+		historyError = null;
+		try {
+			const { points } = await fetchDeviceHistory({
+				devEui: page.params.dev_eui,
+				limit: 200
+			});
 
+			if (points.length) {
+				history = points.map((p) => ({
+					timestamp: p.timestamp || new Date().toISOString(),
+					temperature: p.primary ?? 0,
+					humidity: p.secondary ?? 0,
+					alert: false
+				}));
+			} else if (device) {
+				history = [
+					{
+						timestamp: device.lastSeen,
+						temperature: device.temperatureC,
+						humidity: device.humidity,
+						alert: device.hasAlert
+					}
+				];
+			}
+		} catch (err) {
+			console.error(err);
+			historyError = 'Unable to load historical data';
+		} finally {
+			historyLoading = false;
+		}
+	});
+
+	const latestReading = $derived.by(() => {
+		const latest = history[0];
 		return {
-			timestamp: ts.toISOString(),
-			temperature: temp,
-			humidity,
-			alert,
-			note: alert ? 'Threshold exceeded' : undefined
+			temperature: latest?.temperature ?? device?.temperatureC ?? 0,
+			humidity: latest?.humidity ?? device?.humidity ?? 0,
+			timestamp: latest?.timestamp ?? new Date().toISOString(),
+			alert: latest?.alert ?? false
 		};
 	});
 
-	const latestReading = $derived.by(() => ({
-		temperature: device?.temperatureC ?? 0,
-		humidity: device?.humidity ?? 0,
-		timestamp: new Date().toISOString(),
-		alert: false
-	}));
-	const chronologicalHistory = [...history].reverse();
-	const sortedHistory = [...history].sort(
-		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+	const chronologicalHistory = $derived([...history].reverse());
+	const sortedHistory = $derived(
+		[...history].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 	);
 
-	const temperatureValues = history.map((entry) => entry.temperature);
-	const humidityValues = history.map((entry) => entry.humidity);
+	const temperatureValues = $derived(history.map((entry) => entry.temperature));
+	const humidityValues = $derived(history.map((entry) => entry.humidity));
 
 	function summarize(values: number[]) {
+		if (!values.length) return { high: 0, low: 0, avg: 0, stdDeviation: 0 };
 		const high = Math.max(...values);
 		const low = Math.min(...values);
 		const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -60,6 +84,7 @@
 	}
 
 	function median(values: number[]) {
+		if (!values.length) return 0;
 		const sorted = [...values].sort((a, b) => a - b);
 		const mid = Math.floor(sorted.length / 2);
 		return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
@@ -67,9 +92,9 @@
 
 	const temperatureStats = $derived(summarize(temperatureValues));
 	const humidityStats = $derived(summarize(humidityValues));
-	const temperatureMedian = median(temperatureValues);
-	const humidityMedian = median(humidityValues);
-	const readingCount = history.length;
+	const temperatureMedian = $derived(median(temperatureValues));
+	const humidityMedian = $derived(median(humidityValues));
+	const readingCount = $derived(history.length);
 	const temperatureDelta = $derived.by(() =>
 		history[1] ? latestReading.temperature - history[1].temperature : 0
 	);
@@ -140,14 +165,27 @@
 		})
 	);
 
-	const alertCount = history.filter((entry) => entry.alert).length;
+	const alertCount = $derived(history.filter((entry) => entry.alert).length);
 
 	function toPercent(value: number, min: number, max: number) {
 		if (max - min === 0) return 50;
 		return Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 	}
 
-	let heatmapRange = $state('Nov 25, 06:00 → Nov 26, 06:00 (UTC)');
+	const heatmapRange = $derived(() => {
+		if (!history.length) return 'No history';
+		const newest = history[0]?.timestamp;
+		const oldest = history[history.length - 1]?.timestamp;
+		if (!newest || !oldest) return 'History range';
+		const fmt = new Intl.DateTimeFormat('en', {
+			month: 'short',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit',
+			timeZoneName: 'short'
+		});
+		return `${fmt.format(new Date(oldest))} → ${fmt.format(new Date(newest))}`;
+	});
 
 	const heatmapPalette = {
 		temperature: ['bg-sky-900', 'bg-sky-800', 'bg-sky-700', 'bg-sky-600', 'bg-rose-500'],
@@ -335,6 +373,12 @@
 			</div>
 		{/each}
 	</section>
+
+	{#if historyLoading}
+		<p class="mt-4 text-sm text-slate-400">Loading historical data…</p>
+	{:else if historyError}
+		<p class="mt-4 text-sm text-amber-300">{historyError}</p>
+	{/if}
 
 	<DeviceHeatmap
 		title="Thermal footprint"

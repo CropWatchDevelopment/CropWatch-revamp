@@ -51,7 +51,7 @@
 			{alerts}
 			{offline}
 		/>
-		<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
+		<main class="flex min-h-0 flex-1 flex-col overflow-auto">
 			<Header />
 			{@render children()}
 		</main>

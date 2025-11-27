@@ -78,7 +78,7 @@
 		sortKey = $bindable(''),
 		sortDir = $bindable<SortDir>('asc'),
 		virtual = $bindable(false),
-		class: className = ''
+		class: className = 'text-xs text-slate-200'
 	} = $props();
 
 	const columnMap = $derived.by(() => {
@@ -422,7 +422,7 @@
 	};
 </script>
 
-<div class={`cw-table flex h-full w-full flex-col text-xs text-slate-200 ${className}`}>
+<div class={`cw-table flex h-full w-full flex-col ${className}`}>
 	<div
 		class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/60 px-4 py-3"
 	>
@@ -514,7 +514,7 @@
 			bind:clientHeight={containerHeight}
 			style={virtual && viewportHeight > 0 ? `max-height:${viewportHeight}px` : ''}
 		>
-			<table class="w-full min-w-[280px] table-auto text-[10px] text-slate-100 sm:text-[11px]">
+			<table class="w-full min-w-[280px] table-auto text-[20px] text-slate-100 sm:text-[11px]">
 				<thead class="sticky top-0 bg-slate-900/90 text-slate-300 backdrop-blur">
 					{#if header}
 						{@render header(tableContext)}
@@ -846,7 +846,7 @@
 		</div>
 	</div>
 	<div
-		class="mt-auto flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-4 py-3 text-[11px] text-slate-200 sm:flex-row sm:items-center sm:justify-between"
+		class="mt-auto flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-4 py-3 text-[15px] text-slate-200 sm:flex-row sm:items-center sm:justify-between"
 	>
 		<div class="flex items-center gap-2">
 			<button
@@ -883,6 +883,14 @@
 </div>
 
 <style>
+	:global(.cw-table) {
+		font-size: inherit;
+	}
+
+	:global(.cw-table *) {
+		font-size: inherit;
+	}
+
 	@media (max-width: 640px) {
 		:global(.cw-table thead) {
 			display: none;
