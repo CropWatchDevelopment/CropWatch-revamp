@@ -153,7 +153,9 @@
 		<div class="flex items-center justify-between gap-2">
 			<span
 				class={`${
-					shouldShowLabels ? 'text-xs font-semibold uppercase tracking-wide text-slate-400' : 'sr-only'
+					shouldShowLabels
+						? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
+						: 'sr-only'
 				}`}
 			>
 				Navigation
@@ -163,7 +165,13 @@
 				class={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 text-xs text-slate-200 transition hover:bg-slate-800 ${
 					isMobile ? 'md:hidden' : ''
 				}`}
-				aria-label={isMobile ? (isMobileDrawerOpen ? 'Close sidebar' : 'Open sidebar') : isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+				aria-label={isMobile
+					? isMobileDrawerOpen
+						? 'Close sidebar'
+						: 'Open sidebar'
+					: isCollapsed
+						? 'Expand sidebar'
+						: 'Collapse sidebar'}
 			>
 				{#if isMobile}
 					{isMobileDrawerOpen ? '×' : '☰'}
@@ -174,9 +182,13 @@
 		</div>
 
 		<div>
-			<h2 class={`${
-				shouldShowLabels ? 'text-xs font-semibold uppercase tracking-wide text-slate-400' : 'sr-only'
-			}`}>
+			<h2
+				class={`${
+					shouldShowLabels
+						? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
+						: 'sr-only'
+				}`}
+			>
 				Global search
 			</h2>
 			<div
@@ -197,9 +209,13 @@
 
 		<div class="space-y-3">
 			<div>
-				<h2 class={`${
-					shouldShowLabels ? 'text-xs font-semibold uppercase tracking-wide text-slate-400' : 'sr-only'
-				}`}>
+				<h2
+					class={`${
+						shouldShowLabels
+							? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
+							: 'sr-only'
+					}`}
+				>
 					Facilities
 				</h2>
 				<div class="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1 text-sm">
@@ -228,7 +244,6 @@
 					{#each facilities as f (f.id)}
 						{@const count = devices.filter((d: Device) => d.facilityId === f.id).length}
 						{@const hasAlert = devices.some((d: Device) => d.facilityId === f.id && d.hasAlert)}
-
 						<button
 							onclick={() => {
 								selectedFacilityId = f.id;
@@ -248,7 +263,9 @@
 									{f.name}
 								</span>
 							</span>
-							<span class={`flex items-center gap-1 text-xs text-slate-500 ${shouldShowLabels ? '' : 'sr-only'}`}>
+							<span
+								class={`flex items-center gap-1 text-xs text-slate-500 ${shouldShowLabels ? '' : 'sr-only'}`}
+							>
 								{#if hasAlert}
 									<span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
 								{/if}
@@ -260,9 +277,13 @@
 			</div>
 
 			<div>
-				<h2 class={`${
-					shouldShowLabels ? 'text-xs font-semibold uppercase tracking-wide text-slate-400' : 'sr-only'
-				}`}>
+				<h2
+					class={`${
+						shouldShowLabels
+							? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
+							: 'sr-only'
+					}`}
+				>
 					Locations
 				</h2>
 				<div class="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1 text-sm">
@@ -281,23 +302,29 @@
 					{#each locationsForFacility as loc (loc.id)}
 						{@const locDevices = devices.filter((d: Device) => d.locationId === loc.id)}
 						{@const hasAlert = locDevices.some((d: Device) => d.hasAlert)}
-
-						<button
-							onclick={() => (selectedLocationId = loc.id)}
-							class={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition hover:bg-slate-800/70 ${
-								selectedLocationId === loc.id ? 'bg-slate-800' : ''
-							}`}
-						>
-							<span class={`${shouldShowLabels ? 'truncate' : 'sr-only'}`} title={loc.name}>
-								{loc.name}
-							</span>
-							<span class={`flex items-center gap-1 text-xs text-slate-500 ${shouldShowLabels ? '' : 'sr-only'}`}>
-								{#if hasAlert}
-									<span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
-								{/if}
-								<span>{locDevices.length}</span>
-							</span>
-						</button>
+						<span class="flex flex-row items-center group">
+							<button
+								onclick={() => (selectedLocationId = loc.id)}
+								class={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition hover:bg-slate-800/70 ${
+									selectedLocationId === loc.id ? 'bg-slate-800' : ''
+								}`}
+							>
+								<span class={`${shouldShowLabels ? 'truncate' : 'sr-only'}`} title={loc.name}>
+									{loc.name}
+								</span>
+								<span
+									class={`flex items-center gap-1 text-xs text-slate-500 ${
+										shouldShowLabels ? '' : 'sr-only'
+									}`}
+								>
+									{#if hasAlert}
+										<span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
+									{/if}
+									<span>{locDevices.length}</span>
+								</span>
+							</button>
+							<button class="hidden group-hover:flex px-1">⋮</button>
+						</span>
 					{/each}
 				</div>
 			</div>
@@ -312,11 +339,13 @@
 			</div>
 			<div class="flex items-center justify-between">
 				<span class={shouldShowLabels ? '' : 'sr-only'}>Alerts</span>
-				<span class={`font-mono text-amber-300 ${shouldShowLabels ? '' : 'sr-only'}`}>{alerts}</span>
+				<span class={`font-mono text-amber-300 ${shouldShowLabels ? '' : 'sr-only'}`}>{alerts}</span
+				>
 			</div>
 			<div class="flex items-center justify-between">
 				<span class={shouldShowLabels ? '' : 'sr-only'}>Offline</span>
-				<span class={`font-mono text-rose-300 ${shouldShowLabels ? '' : 'sr-only'}`}>{offline}</span>
+				<span class={`font-mono text-rose-300 ${shouldShowLabels ? '' : 'sr-only'}`}>{offline}</span
+				>
 			</div>
 		</div>
 	</aside>
