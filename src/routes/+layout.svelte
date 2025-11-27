@@ -5,43 +5,55 @@
 	import type { Facility } from '$lib/Interfaces/facility.interface';
 	import type { Location } from '$lib/Interfaces/location.interface';
 	import './layout.css';
+	import type { AppState } from '$lib/Interfaces/appState.interface';
+	import { createAppState, provideAppState, useAppState } from '$lib/data/AppState.svelte';
+	import { setContext } from 'svelte';
 
 	let { data, children } = $props<{
 		data: { facilities: Facility[]; locations: Location[]; devices: Device[] };
 	}>();
+	let appState = createAppState({
+		facilities: data.facilities,
+		locations: data.locations,
+		devices: data.devices
+	});
 
-	const facilities = data?.facilities ?? [];
-	const locations = data?.locations ?? [];
-	const devices = data?.devices ?? [];
+	provideAppState(appState);
 
 	let selectedFacilityId = $state<string | 'all'>('all');
 	let selectedLocationId = $state<string | 'all'>('all');
 
+	// Share selection with child pages
+	setContext('filters', {
+		getFacility: () => selectedFacilityId,
+		getLocation: () => selectedLocationId
+	});
+
 	const locationsForFacility = $derived(
 		selectedFacilityId === 'all'
-			? locations
-			: locations.filter((l) => l.facilityId === selectedFacilityId)
+			? appState.locations
+			: appState.locations.filter((l: Location) => l.facilityId === selectedFacilityId)
 	);
 
-	const total = $derived(devices.length);
-	const alerts = $derived(devices.filter((d: Device) => d.hasAlert).length);
-	const offline = $derived(devices.filter((d: Device) => d.status === 'offline').length);
+	const total = $derived(appState.devices.length);
+	const alerts = $derived(appState.devices.filter((d: Device) => d.hasAlert).length);
+	const offline = $derived(appState.devices.filter((d: Device) => d.status === 'offline').length);
 </script>
 
 <div class="app flex min-h-screen flex-col bg-slate-950 text-slate-100">
-	<Header />
-	<div class="flex flex-1 overflow-hidden">
+	<div class="flex flex-1 flex-row overflow-hidden">
 		<Sidebar
-			{facilities}
+			facilities={appState.facilities}
+			devices={appState.devices}
 			{locationsForFacility}
-			{devices}
 			bind:selectedFacilityId
 			bind:selectedLocationId
 			{total}
 			{alerts}
 			{offline}
 		/>
-		<main class="flex-1 overflow-auto">
+		<main class="flex-1 flex-col overflow-auto">
+			<Header />
 			{@render children()}
 		</main>
 	</div>

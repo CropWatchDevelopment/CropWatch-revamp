@@ -128,7 +128,7 @@
 </script>
 
 <!-- Responsive sidebar -->
-<div class="relative">
+<div class="relative bg-slate-900/75">
 	{#if isMobile && isMobileDrawerOpen}
 		<button
 			type="button"
@@ -141,9 +141,9 @@
 	<aside
 		onmouseenter={handleMouseEnter}
 		onmouseleave={handleMouseLeave}
-		class={`flex flex-col gap-4 border-r border-slate-800 bg-slate-950/75 p-4 transition-all duration-200 ease-in-out ${
+		class={`flex flex-col gap-4 border-r h-full border-slate-800 bg-slate-900/75 p-4 transition-all duration-200 ease-in-out ${
 			isMobile
-				? `fixed inset-y-0 left-0 z-40 h-full transform shadow-2xl shadow-black/40 ${
+				? `fixed inset-y-0 left-0 z-40 transform shadow-2xl shadow-black/40 ${
 						isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'
 					}`
 				: 'relative'
@@ -302,6 +302,8 @@
 				</div>
 			</div>
 		</div>
+
+		<span class="flex-1"></span>
 
 		<div class="mt-auto space-y-2 text-xs text-slate-500">
 			<div class="flex items-center justify-between">

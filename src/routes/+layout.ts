@@ -105,7 +105,7 @@ export const load = () => {
 			name: 'TH-03',
 			locationId: 'l2',
 			facilityId: 'f1',
-			temperatureC: 4.1,
+			temperatureC: 4.2,
 			humidity: 78,
 			lastSeen: '2025-11-26T09:40:00Z',
 			status: 'offline',
@@ -113,7 +113,7 @@ export const load = () => {
 			data: [
 				{
 					timestamp: '2025-11-26T09:30:00Z',
-					temperature: 4.5,
+					temperature: 5.5,
 					humidity: 80,
 					alert: true,
 					note: 'Sensor offline'

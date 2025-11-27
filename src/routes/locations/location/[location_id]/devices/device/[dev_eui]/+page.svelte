@@ -1,20 +1,18 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
+	import DeviceHeatmap from '$lib/components/DeviceHeatmap.svelte';
 	import type { Device } from '$lib/Interfaces/device.interface';
 	import type { DeviceDataHistory } from '$lib/Interfaces/deviceDataHistory.interface';
-	import type { Facility } from '$lib/Interfaces/facility.interface';
+	import { getContext } from 'svelte';
+	import type { AppState } from '$lib/Interfaces/appState.interface';
 
-	let { data } = $props<{
-		data: {
-			facilities: Facility[];
-			locations: Location[];
-			devices: Device[];
-		};
-	}>();
+	const getAppState = getContext<AppState>('appState');
+	let appState = $derived(getAppState());
 
-	const device = data?.devices?.find((d: Device) => d.id === page.params.dev_eui);
-
-	type MetricOption = 'temperature' | 'humidity';
+	let device: Device | undefined = $derived(
+		appState.devices.find((d: Device) => d.id === page.params.dev_eui)
+	);
 
 	const baseTimestamp = new Date('2025-11-26T06:00:00Z').getTime();
 
@@ -36,7 +34,12 @@
 		};
 	});
 
-	const latestReading = history[0];
+	const latestReading = $derived.by(() => ({
+		temperature: device?.temperatureC ?? 0,
+		humidity: device?.humidity ?? 0,
+		timestamp: new Date().toISOString(),
+		alert: false
+	}));
 	const chronologicalHistory = [...history].reverse();
 	const sortedHistory = [...history].sort(
 		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -62,15 +65,19 @@
 		return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 	}
 
-	const temperatureStats = summarize(temperatureValues);
-	const humidityStats = summarize(humidityValues);
+	const temperatureStats = $derived(summarize(temperatureValues));
+	const humidityStats = $derived(summarize(humidityValues));
 	const temperatureMedian = median(temperatureValues);
 	const humidityMedian = median(humidityValues);
 	const readingCount = history.length;
-	const temperatureDelta = history[1] ? latestReading.temperature - history[1].temperature : 0;
-	const humidityDelta = history[1] ? latestReading.humidity - history[1].humidity : 0;
+	const temperatureDelta = $derived.by(() =>
+		history[1] ? latestReading.temperature - history[1].temperature : 0
+	);
+	const humidityDelta = $derived.by(() =>
+		history[1] ? latestReading.humidity - history[1].humidity : 0
+	);
 
-	const baseMetricCards = [
+	const baseMetricCards = $derived.by(() => [
 		{
 			key: 'temperature',
 			label: 'Temperature',
@@ -111,60 +118,27 @@
 				badge: 'text-sky-300'
 			}
 		}
-	];
+	]);
 
-	const metricCards = baseMetricCards.map((card) => {
-		const padding = Math.max(0.5, card.range * 0.15 || 0.5);
-		const scaleMin = card.min - padding;
-		const scaleMax = card.max + padding;
+	const metricCards = $derived.by(() =>
+		baseMetricCards.map((card) => {
+			const padding = Math.max(0.5, card.range * 0.15 || 0.5);
+			const scaleMin = card.min - padding;
+			const scaleMax = card.max + padding;
 
-		return {
-			...card,
-			scaleMin,
-			scaleMax,
-			positions: {
-				min: toPercent(card.min, scaleMin, scaleMax),
-				avg: toPercent(card.avg, scaleMin, scaleMax),
-				max: toPercent(card.max, scaleMin, scaleMax),
-				current: toPercent(card.current, scaleMin, scaleMax)
-			}
-		};
-	});
-
-	const statCards = [
-		{
-			label: 'Temp · 24h HIGH',
-			value: `${temperatureStats.high.toFixed(1)}°C`
-		},
-		{
-			label: 'Temp · 24h LOW',
-			value: `${temperatureStats.low.toFixed(1)}°C`
-		},
-		{
-			label: 'Temp · 24h Average',
-			value: `${temperatureStats.avg.toFixed(1)}°C`
-		},
-		{
-			label: 'Temp · Std deviation',
-			value: `${temperatureStats.stdDeviation.toFixed(2)}°C`
-		},
-		{
-			label: 'Humidity · 24h HIGH',
-			value: `${humidityStats.high.toFixed(1)}%`
-		},
-		{
-			label: 'Humidity · 24h LOW',
-			value: `${humidityStats.low.toFixed(1)}%`
-		},
-		{
-			label: 'Humidity · 24h Average',
-			value: `${humidityStats.avg.toFixed(1)}%`
-		},
-		{
-			label: 'Humidity · Std deviation',
-			value: `${humidityStats.stdDeviation.toFixed(2)}%`
-		}
-	];
+			return {
+				...card,
+				scaleMin,
+				scaleMax,
+				positions: {
+					min: toPercent(card.min, scaleMin, scaleMax),
+					avg: toPercent(card.avg, scaleMin, scaleMax),
+					max: toPercent(card.max, scaleMin, scaleMax),
+					current: toPercent(card.current, scaleMin, scaleMax)
+				}
+			};
+		})
+	);
 
 	const alertCount = history.filter((entry) => entry.alert).length;
 
@@ -173,24 +147,37 @@
 		return Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 	}
 
-	let heatmapMetric = $state<MetricOption>('temperature');
-	let dateRange = $state('Nov 25, 06:00 → Nov 26, 06:00 (UTC)');
+	let heatmapRange = $state('Nov 25, 06:00 → Nov 26, 06:00 (UTC)');
 
 	const heatmapPalette = {
 		temperature: ['bg-sky-900', 'bg-sky-800', 'bg-sky-700', 'bg-sky-600', 'bg-rose-500'],
 		humidity: ['bg-slate-800', 'bg-teal-700', 'bg-teal-500', 'bg-teal-400', 'bg-cyan-300']
 	};
 
-	function getHeatColor(value: number, metric: MetricOption) {
-		const stats = metric === 'temperature' ? temperatureStats : humidityStats;
-		const palette = heatmapPalette[metric];
-		const normalized = (value - stats.low) / Math.max(1, stats.high - stats.low);
-		const index = Math.min(
-			palette.length - 1,
-			Math.max(0, Math.round(normalized * (palette.length - 1)))
-		);
-		return palette[index];
-	}
+	const heatmapSeries = $derived.by(() => ({
+		temperature: {
+			key: 'temperature',
+			label: 'Temp',
+			unit: '°C',
+			palette: heatmapPalette.temperature,
+			points: chronologicalHistory.map((entry) => ({
+				label: formatHour(entry.timestamp),
+				value: entry.temperature,
+				alert: entry.alert
+			}))
+		},
+		humidity: {
+			key: 'humidity',
+			label: 'Humidity',
+			unit: '%',
+			palette: heatmapPalette.humidity,
+			points: chronologicalHistory.map((entry) => ({
+				label: formatHour(entry.timestamp),
+				value: entry.humidity,
+				alert: entry.alert
+			}))
+		}
+	}));
 
 	const formatter = new Intl.DateTimeFormat('en', {
 		hour: 'numeric',
@@ -201,24 +188,12 @@
 	function formatHour(timestamp: string) {
 		return formatter.format(new Date(timestamp));
 	}
-
-	const heatmapData = $derived.by(() =>
-		chronologicalHistory.map((entry) => {
-			const value = heatmapMetric === 'temperature' ? entry.temperature : entry.humidity;
-			return {
-				label: formatHour(entry.timestamp),
-				value,
-				alert: entry.alert,
-				className: getHeatColor(value, heatmapMetric)
-			};
-		})
-	);
 </script>
 
 <div class="flex flex-col gap-8 p-6 text-slate-100">
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<a
-			href={`${page.url.searchParams.get('prev') ?? '/locations'}`}
+			href={resolve(page.url.searchParams.get('prev') ?? '/locations')}
 			class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-700 hover:bg-slate-900"
 		>
 			<span aria-hidden="true">←</span>
@@ -229,7 +204,7 @@
 				Device detail
 			</div>
 			<a
-				href="/settings?prev={page.url.pathname}"
+				href={resolve(`/settings?prev=${page.url.pathname}`)}
 				class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-700 hover:bg-slate-900"
 			>
 				<span class="text-xs">⚙</span>
@@ -361,78 +336,12 @@
 		{/each}
 	</section>
 
-	<section
-		class="rounded-3xl border border-slate-800 bg-[#21213c] p-6 shadow-lg shadow-slate-950/40"
-	>
-		<div class="flex flex-wrap items-center justify-between gap-4">
-			<div>
-				<p class="text-xs uppercase tracking-[0.15em] text-slate-500">Thermal footprint</p>
-				<h2 class="text-xl font-semibold text-white">Past 24 hours</h2>
-			</div>
-			<div class="flex flex-wrap items-center gap-3">
-				<div class="flex overflow-hidden rounded-full border border-slate-600">
-					<label
-						class={`cursor-pointer px-4 py-2 text-sm font-medium transition ${
-							heatmapMetric === 'temperature'
-								? 'bg-slate-700 text-white'
-								: 'bg-transparent text-slate-500'
-						}`}
-					>
-						<input class="sr-only" type="radio" value="temperature" bind:group={heatmapMetric} />
-						Temp
-					</label>
-					<label
-						class={`cursor-pointer px-4 py-2 text-sm font-medium transition ${
-							heatmapMetric === 'humidity'
-								? 'bg-slate-700 text-white'
-								: 'bg-transparent text-slate-500'
-						}`}
-					>
-						<input class="sr-only" type="radio" value="humidity" bind:group={heatmapMetric} />
-						Humidity
-					</label>
-				</div>
-				<label
-					class="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-sm text-slate-200"
-				>
-					<span class="text-xs uppercase tracking-wide text-slate-500">Range</span>
-					<input
-						class="w-60 bg-transparent text-right text-sm text-slate-100 outline-none"
-						type="text"
-						bind:value={dateRange}
-						placeholder="Select date range"
-					/>
-				</label>
-			</div>
-		</div>
-
-		<div class="mt-6 space-y-4">
-			<div class="grid grid-cols-12 gap-1">
-				{#each heatmapData as cell (cell.label)}
-					<div
-						class={`relative aspect-[4/3] rounded-lg ${cell.className} ${
-							cell.alert ? 'ring-2 ring-amber-400' : 'ring-1 ring-slate-900/30'
-						}`}
-						title={`${cell.label} — ${cell.value}${heatmapMetric === 'temperature' ? '°C' : '%'}`}
-					>
-						<span class="absolute inset-x-1 bottom-1 text-[10px] font-medium text-white/80">
-							{cell.value}{heatmapMetric === 'temperature' ? '°' : '%'}
-						</span>
-					</div>
-				{/each}
-			</div>
-			<div class="flex items-center justify-between text-xs text-slate-500">
-				<span>24h ago</span>
-				<div class="flex items-center gap-1">
-					<span class="h-3 w-3 rounded bg-slate-700"></span>
-					<span>cool</span>
-					<span class="h-3 w-3 rounded bg-rose-500"></span>
-					<span>hot</span>
-				</div>
-				<span>Now</span>
-			</div>
-		</div>
-	</section>
+	<DeviceHeatmap
+		title="Thermal footprint"
+		subtitle="Past 24 hours"
+		metrics={heatmapSeries}
+		dateRange={heatmapRange}
+	/>
 
 	<section
 		class="rounded-3xl border border-slate-800 bg-[#21213c] p-6 shadow-lg shadow-slate-950/40"

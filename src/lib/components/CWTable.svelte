@@ -68,10 +68,10 @@
 		getRowId = defaultRowId,
 		rowHeight = 52,
 		viewportHeight = 520,
-		header,
-		row,
-		actions,
-		empty,
+		header = undefined,
+		row = undefined,
+		actions = undefined,
+		empty = undefined,
 		pageSize = $bindable(15),
 		page = $bindable(1),
 		search = $bindable(''),
@@ -97,8 +97,10 @@
 		return defaults;
 	};
 
-	let columnFilters = $state<Record<string, string[]>>(buildDefaultFilters());
-	let pendingColumnFilters = $state<Record<string, string[]>>(buildDefaultFilters());
+	const defaultsSnapshot = () => buildDefaultFilters();
+
+	let columnFilters = $state<Record<string, string[]>>(defaultsSnapshot());
+	let pendingColumnFilters = $state<Record<string, string[]>>(defaultsSnapshot());
 	let pendingSortKey = $state<string>(sortKey || (columns[0]?.key ?? ''));
 	let pendingSortDir = $state<SortDir>(sortDir as SortDir);
 	let openColumn = $state<string | null>(null);
@@ -114,6 +116,9 @@
 	const setPendingFilters = (value: Record<string, string[]>) => {
 		pendingColumnFilters = value;
 	};
+
+	// Track deep changes so resorting reacts when cell values mutate
+	const itemsVersion = $derived.by(() => JSON.stringify(items ?? []));
 
 	const loadFromStorage = () => {
 		if (!storageKey || typeof localStorage === 'undefined') return;
@@ -183,7 +188,10 @@
 		});
 	};
 
-	let tableItems = $derived.by(() => items ?? []);
+	let tableItems = $derived.by(() => {
+		itemsVersion; // ensure deep mutation tracking
+		return Array.isArray(items) ? [...items] : [];
+	});
 	let filtered = $derived.by(() =>
 		applyColumnFilters(tableItems.filter((i) => filterFn(i, search)))
 	);
@@ -296,6 +304,36 @@
 		if (virtual && scroller) scroller.scrollTop = 0;
 	};
 
+	const clearAll = () => {
+		search = '';
+		sortKey = '';
+		sortDir = 'asc';
+		const defaults = defaultsSnapshot();
+		setColumnFilters(defaults);
+		setPendingFilters(defaults);
+		pendingSortKey = columns[0]?.key ?? '';
+		pendingSortDir = 'asc';
+		page = 1;
+		openColumn = null;
+		saveToStorage();
+	};
+
+	const columnHasFilter = (colKey: string) => {
+		const defaults = defaultsSnapshot();
+		const active = columnFilters[colKey] ?? [];
+		const def = defaults[colKey] ?? [];
+		return active.length !== def.length;
+	};
+
+	const hasActiveFilters = $derived.by(() => {
+		const defaults = defaultsSnapshot();
+		for (const key in defaults) {
+			const active = columnFilters[key] ?? [];
+			if (active.length !== defaults[key]?.length) return true;
+		}
+		return Boolean(search);
+	});
+
 	const setSearch = (value: string) => {
 		search = value;
 		if (virtual && scroller) scroller.scrollTop = 0;
@@ -333,6 +371,7 @@
 		actions,
 		setSort,
 		sortIcon,
+		clearAll,
 		goToPage,
 		nextPage,
 		prevPage,
@@ -439,6 +478,28 @@
 				</select>
 			</label>
 
+			{#if sortKey || hasActiveFilters}
+				<div class="flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900/70 px-3 py-1 text-[11px] text-slate-200">
+					{#if sortKey}
+						<span class="inline-flex items-center gap-1 rounded bg-sky-500/15 px-2 py-0.5 text-sky-200">
+							Sort: {sortKey} {sortDir === 'asc' ? '↑' : '↓'}
+						</span>
+					{/if}
+					{#if hasActiveFilters}
+						<span class="inline-flex items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-amber-200">
+							Filters on
+						</span>
+					{/if}
+					<button
+						type="button"
+						class="rounded bg-slate-800 px-2 py-0.5 text-slate-200 ring-1 ring-slate-700 hover:bg-slate-700"
+						onclick={clearAll}
+					>
+						Clear all
+					</button>
+				</div>
+			{/if}
+
 			<div class="text-slate-400">
 				Showing {visibleStart}–{visibleEnd} of {total}
 			</div>
@@ -476,10 +537,12 @@
 									>
 										<span>{col.label}</span>
 										{#if col.sortable !== false}
-											<span>{sortIcon(col.key)}</span>
+											<span class={col.key === sortKey ? 'text-sky-300' : ''}>{sortIcon(col.key)}</span>
 										{/if}
 										{#if col.filter}
-											<span class="text-slate-500">▾</span>
+											<span class={`text-slate-500 ${columnHasFilter(col.key) ? 'text-amber-300' : ''}`}>
+												▾
+											</span>
 										{/if}
 									</button>
 

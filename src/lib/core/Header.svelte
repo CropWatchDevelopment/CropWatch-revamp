@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import logo from '$lib/images/svelte-logo.svg';
+	import logo from '$lib/images/cropwatch_static.svg';
 	import github from '$lib/images/github.svg';
 
 	function toggleSidebar() {
@@ -15,7 +15,7 @@
 		<button
 			type="button"
 			onclick={toggleSidebar}
-			class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 text-slate-100 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 md:hidden"
+			class="inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-700 text-slate-100 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 md:hidden"
 			aria-label="Toggle sidebar"
 		>
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
@@ -23,8 +23,8 @@
 			</svg>
 		</button>
 		<div class="corner">
-			<a href="https://svelte.dev/docs/kit">
-				<img src={logo} alt="SvelteKit" />
+			<a href="/">
+				<img src={logo} alt="CropWatch" />
 			</a>
 		</div>
 	</div>

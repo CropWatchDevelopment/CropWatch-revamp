@@ -1,24 +1,23 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
 	import CWTable from '$lib/components/CWTable.svelte';
 	import type { DeviceStatus } from '$lib/types/DeviceStatus.type';
 	import type { Facility } from '$lib/Interfaces/facility.interface';
 	import type { Location } from '$lib/Interfaces/location.interface';
 	import type { Device } from '$lib/Interfaces/device.interface';
 
-	let { data } = $props<{
-		data: {
-			facilities: Facility[];
-			locations: Location[];
-			devices: Device[];
-		};
-	}>();
+	import { useAppState } from '$lib/data/AppState.svelte';
 
-	const facilities = data?.facilities ?? [];
-	const locations = data?.locations ?? [];
-	const devices = data?.devices ?? [];
+	const getAppState = useAppState();
+	let appState = $derived(getAppState());
 
-	let selectedFacilityId = $state<string | 'all'>('all');
-	let selectedLocationId = $state<string | 'all'>('all');
+	// Receive sidebar selections from layout context
+	const filters = getContext<{
+		getFacility: () => string | 'all';
+		getLocation: () => string | 'all';
+	}>('filters');
+	let selectedFacilityId = $derived(filters.getFacility());
+	let selectedLocationId = $derived(filters.getLocation());
 
 	// Status helpers
 	const statusConfig: Record<
@@ -47,8 +46,8 @@
 		}
 	};
 
-	const getFacility = (id: string) => facilities.find((f) => f.id === id);
-	const getLocation = (id: string) => locations.find((l) => l.id === id);
+	const getFacility = (id: string) => appState.facilities.find((f: Facility) => f.id === id);
+	const getLocation = (id: string) => appState.locations.find((l: Location) => l.id === id);
 	const STATUS_TYPES: DeviceStatus[] = ['online', 'offline', 'loading', 'alert'];
 
 	const deviceMatchesSearch = (d: Device, q: string) => {
@@ -63,22 +62,22 @@
 	};
 
 	const filteredDevices = $derived.by(() => {
-		let list = devices;
+		let list = appState.devices;
 
 		if (selectedFacilityId !== 'all') {
-			list = list.filter((d) => d.facilityId === selectedFacilityId);
+			list = list.filter((d: Device) => d.facilityId === selectedFacilityId);
 		}
 
 		if (selectedLocationId !== 'all') {
-			list = list.filter((d) => d.locationId === selectedLocationId);
+			list = list.filter((d: Device) => d.locationId === selectedLocationId);
 		}
 
 		return list;
 	});
 
 	const total = $derived(filteredDevices?.length);
-	const alerts = $derived(filteredDevices?.filter((d) => d.hasAlert).length);
-	const offline = $derived(filteredDevices?.filter((d) => d.status === 'offline').length);
+	const alerts = $derived(filteredDevices?.filter((d: Device) => d.hasAlert).length);
+	const offline = $derived(filteredDevices?.filter((d: Device) => d.status === 'offline').length);
 
 	const statusOptions = STATUS_TYPES?.map((s) => ({
 		value: s,
@@ -126,14 +125,14 @@
 					label: 'View',
 					onClick: (item: Device) => {
 						window.location.href = `/locations/location/${item.locationId}/devices/device/${item.id}?prev=${window.location.pathname}`;
-					},
+					}
 				}
-			],
+			]
 		}
 	];
 
 	const tableRows = $derived(
-		filteredDevices?.map((d) => {
+		filteredDevices?.map((d: Device) => {
 			const facility = getFacility(d.facilityId);
 			const location = getLocation(d.locationId);
 			return {
@@ -145,11 +144,11 @@
 	);
 </script>
 
-<div class="flex h-screen bg-slate-950 text-slate-50">
+<div class="flex h-screen min-h-0 overflow-hidden bg-slate-950 text-slate-50">
 	<!-- Main content -->
-	<main class="flex flex-1 flex-col bg-slate-950">
+	<main class="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-950">
 		<!-- Top toolbar -->
-		<header class="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+		<header class="flex-none border-b border-slate-800 bg-slate-950/90 backdrop-blur">
 			<div class="flex items-center justify-between px-6 py-3">
 				<div class="flex flex-col gap-1">
 					<div class="flex items-center gap-2 text-xs text-slate-400">
@@ -213,10 +212,10 @@
 		</header>
 
 		<!-- Device table -->
-		<section class="flex-1 overflow-hidden">
-			<div class="flex h-full flex-col overflow-hidden px-6 pb-6 pt-2">
+		<section class="flex-1 min-h-0 overflow-hidden">
+			<div class="flex h-full min-h-0 flex-col overflow-hidden px-6 pb-6 pt-2">
 				<div
-					class="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#21213c]"
+					class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#21213c]"
 				>
 					<CWTable
 						items={tableRows}
