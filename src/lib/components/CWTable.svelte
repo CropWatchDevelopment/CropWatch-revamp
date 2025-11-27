@@ -67,7 +67,7 @@
 		sortFn = defaultSort,
 		getRowId = defaultRowId,
 		rowHeight = 52,
-		viewportHeight = 520,
+		viewportHeight = 0,
 		header = undefined,
 		row = undefined,
 		actions = undefined,
@@ -512,7 +512,7 @@
 			{@attach setScrollerRef}
 			onscroll={virtual ? handleScroll : undefined}
 			bind:clientHeight={containerHeight}
-			style={virtual ? `max-height:${viewportHeight}px` : ''}
+			style={virtual && viewportHeight > 0 ? `max-height:${viewportHeight}px` : ''}
 		>
 			<table class="w-full min-w-[280px] table-auto text-[10px] text-slate-100 sm:text-[11px]">
 				<thead class="sticky top-0 bg-slate-900/90 text-slate-300 backdrop-blur">
@@ -845,9 +845,8 @@
 			</table>
 		</div>
 	</div>
-	<span class="flex-grow hidden md:flex"></span>
 	<div
-		class="flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-4 py-3 text-[11px] text-slate-200 sm:flex-row sm:items-center sm:justify-between"
+		class="mt-auto flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-4 py-3 text-[11px] text-slate-200 sm:flex-row sm:items-center sm:justify-between"
 	>
 		<div class="flex items-center gap-2">
 			<button

@@ -224,8 +224,7 @@
 						storageKey="cwtable_header_filters"
 						pageSize={12}
 						rowHeight={64}
-						viewportHeight={520}
-						class="h-full"
+						class="h-full flex-1"
 						virtual={tableRows?.length > 30}
 					/>
 				</div>

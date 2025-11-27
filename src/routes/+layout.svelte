@@ -8,10 +8,9 @@
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import { createAppState, provideAppState, useAppState } from '$lib/data/AppState.svelte';
 	import { setContext } from 'svelte';
+	import type { LayoutProps } from './$types';
 
-	let { data, children } = $props<{
-		data: { facilities: Facility[]; locations: Location[]; devices: Device[] };
-	}>();
+	let { data, children } = $props<LayoutProps>();
 	let appState = createAppState({
 		facilities: data.facilities,
 		locations: data.locations,
@@ -40,8 +39,8 @@
 	const offline = $derived(appState.devices.filter((d: Device) => d.status === 'offline').length);
 </script>
 
-<div class="app flex min-h-screen flex-col bg-slate-950 text-slate-100">
-	<div class="flex flex-1 flex-row overflow-hidden">
+<div class="app flex h-screen flex-col overflow-hidden bg-slate-950 text-slate-100">
+	<div class="flex min-h-0 flex-1 flex-row overflow-hidden">
 		<Sidebar
 			facilities={appState.facilities}
 			devices={appState.devices}
@@ -52,7 +51,7 @@
 			{alerts}
 			{offline}
 		/>
-		<main class="flex-1 flex-col overflow-auto">
+		<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<Header />
 			{@render children()}
 		</main>

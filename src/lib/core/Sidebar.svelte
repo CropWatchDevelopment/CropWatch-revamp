@@ -128,7 +128,7 @@
 </script>
 
 <!-- Responsive sidebar -->
-<div class="relative bg-slate-900/75">
+<div class="relative h-full bg-slate-900/75">
 	{#if isMobile && isMobileDrawerOpen}
 		<button
 			type="button"
