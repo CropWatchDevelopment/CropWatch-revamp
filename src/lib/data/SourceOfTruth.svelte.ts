@@ -337,11 +337,13 @@ export type DeviceHistoryPoint = {
  */
 export async function fetchDeviceHistory({
 	devEui,
-	limit = 200,
+	limit = 500,
+	hoursBack = 24,
 	session
 }: {
 	devEui: string;
 	limit?: number;
+	hoursBack?: number;
 	session?: AuthSession;
 }) {
 	const supabase = await createSupabaseClient(session);
@@ -362,13 +364,23 @@ export async function fetchDeviceHistory({
 	const table = deviceRow.device_type.data_table_v2;
 	const primaryKey = deviceRow.device_type.primary_data_v2;
 	const secondaryKey = deviceRow.device_type.secondary_data_v2;
+	const sinceIso = hoursBack ? new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString() : null;
 
-	const { data: rows, error: historyError } = await supabase
+	let query = supabase
 		.from(table)
 		.select('*')
 		.eq('dev_eui', devEui)
-		.order('created_at', { ascending: false })
-		.limit(limit);
+		.order('created_at', { ascending: false, nulls: 'last' });
+
+	if (sinceIso) {
+		query = query.gte('created_at', sinceIso);
+	}
+
+	if (limit) {
+		query = query.limit(limit);
+	}
+
+	const { data: rows, error: historyError } = await query;
 
 	if (historyError) throw historyError;
 

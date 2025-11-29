@@ -35,7 +35,7 @@
 
 	const isMobile = $derived(viewportWidth < 768);
 	const shouldShowLabels = $derived(!isCollapsed || isMobile || peekOpen);
-	const sidebarWidth = $derived(() => {
+	const sidebarWidth = $derived.by(() => {
 		if (isMobile) return 288;
 		return !isCollapsed || peekOpen ? 320 : 84;
 	});
@@ -207,8 +207,8 @@
 			</div>
 		</div>
 
-		<div class="space-y-3">
-			<div>
+		<div class="flex flex-1 min-h-0 flex-col gap-3">
+			<div class="flex flex-1 min-h-0 flex-col">
 				<h2
 					class={`${
 						shouldShowLabels
@@ -218,7 +218,7 @@
 				>
 					Facilities
 				</h2>
-				<div class="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1 text-sm">
+				<div class="mt-2 flex-1 space-y-1 overflow-y-auto pr-1 text-sm">
 					<button
 						onclick={() => {
 							selectedFacilityId = 'all';
@@ -276,9 +276,9 @@
 				</div>
 			</div>
 
-			<div>
+			<div class="flex flex-1 min-h-0 flex-col border-t border-slate-800 pt-3">
 				<h2
-					class={`flex flex-1 ${
+					class={`flex ${
 						shouldShowLabels
 							? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
 							: 'sr-only'
@@ -286,7 +286,7 @@
 				>
 					Locations
 				</h2>
-				<div class="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1 text-sm">
+				<div class="mt-2 flex-1 space-y-1 overflow-y-auto pr-1 text-sm">
 					<button
 						onclick={() => (selectedLocationId = 'all')}
 						class={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition hover:bg-slate-800/70 ${
@@ -329,8 +329,6 @@
 				</div>
 			</div>
 		</div>
-
-		<span class="flex-1"></span>
 
 		<div class="mt-auto space-y-2 text-xs text-slate-500">
 			<div class="flex items-center justify-between">

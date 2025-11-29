@@ -1,8 +1,12 @@
 <script lang="ts">
+	import CWButton from '$lib/components/CWButton.svelte';
+	import KEY_ICON from '$lib/images/icons/key.svg';
+
 	let { form } = $props<{
 		form: { message?: string } | null;
 	}>();
 
+	let loggingIn: boolean = $state<boolean>(false);
 </script>
 
 <main class="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
@@ -11,12 +15,21 @@
 		<p class="mt-1 text-sm text-slate-400">Use your email and password to continue.</p>
 
 		{#if form?.message}
-			<p class="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+			<p
+				class="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
+			>
 				{form.message}
 			</p>
 		{/if}
 
-		<form method="POST" action="?/login" class="mt-4 space-y-4">
+		<form
+			method="POST"
+			action="?/login"
+			class="mt-4 space-y-4"
+			on:submit={() => {
+				loggingIn = true;
+			}}
+		>
 			<label class="block text-sm text-slate-300">
 				<span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Email</span>
 				<input
@@ -41,12 +54,16 @@
 				/>
 			</label>
 
-			<button
+			<!-- <button
 				type="submit"
 				class="w-full rounded-lg bg-sky-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/60"
 			>
 				Sign in
-			</button>
+			</button> -->
+			<CWButton type="submit" variant="primary" loading={loggingIn} size="md" fullWidth={true}>
+				<img src={KEY_ICON} alt="Sign in icon" class="h-5 w-5" />
+				Sign in
+			</CWButton>
 		</form>
 	</div>
 </main>

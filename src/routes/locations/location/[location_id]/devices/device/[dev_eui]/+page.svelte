@@ -7,9 +7,11 @@
 	import type { DeviceDataHistory } from '$lib/Interfaces/deviceDataHistory.interface';
 	import { getContext, onMount } from 'svelte';
 	import type { AppState } from '$lib/Interfaces/appState.interface';
+	import type { PageData } from './$types';
 
 	const getAppState = getContext<AppState>('appState');
 	let appState = $derived(getAppState());
+	let { data }: { data: PageData } = $props();
 
 	let device: Device | undefined = $derived(
 		appState.devices.find((d: Device) => d.id === page.params.dev_eui)
@@ -19,13 +21,25 @@
 	let historyLoading = $state(true);
 	let historyError: string | null = $state(null);
 
+	if (data.initialHistory?.length) {
+		history = data.initialHistory.map((p) => ({
+			timestamp: p.timestamp || new Date().toISOString(),
+			temperature: p.primary ?? 0,
+			humidity: p.secondary ?? 0,
+			alert: false
+		}));
+		historyLoading = false;
+	}
+
 	onMount(async () => {
+		if (history.length) return;
 		historyLoading = true;
 		historyError = null;
 		try {
 			const { points } = await fetchDeviceHistory({
 				devEui: page.params.dev_eui,
-				limit: 200
+				limit: 2000,
+				hoursBack: 24
 			});
 
 			if (points.length) {
@@ -172,7 +186,7 @@
 		return Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 	}
 
-	const heatmapRange = $derived(() => {
+	const heatmapRange = $derived.by(() => {
 		if (!history.length) return 'No history';
 		const newest = history[0]?.timestamp;
 		const oldest = history[history.length - 1]?.timestamp;
@@ -191,6 +205,12 @@
 		temperature: ['bg-sky-900', 'bg-sky-800', 'bg-sky-700', 'bg-sky-600', 'bg-rose-500'],
 		humidity: ['bg-slate-800', 'bg-teal-700', 'bg-teal-500', 'bg-teal-400', 'bg-cyan-300']
 	};
+
+	const formatter = new Intl.DateTimeFormat('en', {
+		hour: 'numeric',
+		minute: '2-digit',
+		timeZone: 'UTC'
+	});
 
 	const heatmapSeries = $derived.by(() => ({
 		temperature: {
@@ -216,12 +236,6 @@
 			}))
 		}
 	}));
-
-	const formatter = new Intl.DateTimeFormat('en', {
-		hour: 'numeric',
-		minute: '2-digit',
-		timeZone: 'UTC'
-	});
 
 	function formatHour(timestamp: string) {
 		return formatter.format(new Date(timestamp));

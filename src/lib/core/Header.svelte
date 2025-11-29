@@ -1,16 +1,43 @@
 <script lang="ts">
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import CWButton from '$lib/components/CWButton.svelte';
+	import CWDialog from '$lib/components/CWDialog.svelte';
 	import logo from '$lib/images/cropwatch_static.svg';
-	import github from '$lib/images/github.svg';
+	import LOCK_ICON from '$lib/images/icons/lock.svg';
+	import LOGOUT_ICON from '$lib/images/icons/logout.svg';
 
 	function toggleSidebar() {
 		if (typeof window === 'undefined') return;
 		window.dispatchEvent(new CustomEvent('sidebar:toggle'));
 	}
+
+	async function logout() {
+		loggingOutLoading = true;
+		try {
+			const res = await fetch(resolve('/api/public/logout'), {
+				method: 'GET',
+				credentials: 'include'
+			});
+			if (!res.ok) throw new Error(`Logout failed with ${res.status}`);
+			await invalidateAll();
+			logoutDialog = false;
+			goto(resolve('/auth'));
+			loggingOutLoading = false;
+		} catch (error) {
+			console.error('Logout failed:', error);
+			loggingOutLoading = false;
+		}
+	}
+
+	let logoutDialog: boolean = $state<boolean>(false);
+	let loggingOutLoading: boolean = $state<boolean>(false);
 </script>
 
-<header class="flex items-center justify-between border-b border-slate-800 bg-slate-900/70 px-4 py-2">
+<header
+	class="flex items-center justify-between border-b border-slate-800 bg-slate-900/70 px-4 py-2"
+>
 	<div class="flex items-center gap-3">
 		<button
 			type="button"
@@ -46,12 +73,36 @@
 		</svg>
 	</nav>
 
-	<div class="corner">
-		<a href="https://github.com/sveltejs/kit">
-			<img src={github} alt="GitHub" />
-		</a>
-	</div>
+	<CWButton variant="secondary" onclick={() => (logoutDialog = true)}>
+		<img src={LOCK_ICON} alt="Log out of account" class="h-4 w-4" />
+		Log Out
+	</CWButton>
 </header>
+
+<CWDialog
+	open={logoutDialog}
+	title="Log out"
+	showCloseButton={true}
+	closeOnBackdrop={true}
+	closeOnEscape={true}
+>
+	<p class="mb-5">Are you sure you want to log out of your account?</p>
+
+	<div class="flex justify-end gap-5">
+		<button
+			onclick={() => (logoutDialog = false)}
+			class="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-700/60 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-700 hover:bg-slate-800"
+		>
+			<img src={LOCK_ICON} alt="Log out of account" class="h-4 w-4" />
+			Stay Logged in
+		</button>
+
+		<CWButton variant="danger" loading={loggingOutLoading} onclick={() => logout()}>
+			<img src={LOGOUT_ICON} alt="Log out of account" class="h-4 w-4" />
+			Log Out
+		</CWButton>
+	</div>
+</CWDialog>
 
 <style>
 	header {
