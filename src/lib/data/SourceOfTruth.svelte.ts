@@ -318,9 +318,14 @@ export async function fetchDevicePage({
 	};
 }
 
-export async function loadInitialAppState(session?: AuthSession): Promise<AppState & { nextCursor: string | null }> {
-	const { devices, locations, facilities, nextCursor } = await fetchDevicePage({ limit: 100, session });
-	return { devices, locations, facilities, nextCursor };
+export async function loadInitialAppState(
+	session?: AuthSession
+): Promise<AppState & { nextCursor: string | null }> {
+	const { devices, locations, facilities, nextCursor } = await fetchDevicePage({
+		limit: 100,
+		session
+	});
+	return { devices, locations, facilities, nextCursor, isLoggedIn: !!session };
 }
 
 export type DeviceHistoryPoint = {

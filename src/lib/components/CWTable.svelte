@@ -78,7 +78,9 @@
 		sortKey = $bindable(''),
 		sortDir = $bindable<SortDir>('asc'),
 		virtual = $bindable(false),
-		class: className = 'text-xs text-slate-200'
+		class: className = 'text-xs text-slate-200',
+		loading = false,
+		loadingText = 'Loading...'
 	} = $props();
 
 	const columnMap = $derived.by(() => {
@@ -671,7 +673,7 @@
 							{/each}
 						{:else}
 							{#each visibleRows as item, idx (getRowId(item, startIndex + idx))}
-								<tr class="border-t border-slate-900/80">
+								<tr class="border-t border-slate-900/80 even:bg-slate-900/50 hover:bg-blue-800/70" style={`height:${rowHeight}px`}>
 									{#if columns.length}
 										{#each columns as col (col.key)}
 											<td
@@ -844,6 +846,15 @@
 				</tbody>
 			</table>
 		</div>
+
+		{#if loading}
+			<div class="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
+				<div class="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3 shadow-lg shadow-black/40">
+					<span class="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-sky-400"></span>
+					<span class="text-sm font-medium text-slate-100">{loadingText}</span>
+				</div>
+			</div>
+		{/if}
 	</div>
 	<div
 		class="mt-auto flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-4 py-3 text-[15px] text-slate-200 sm:flex-row sm:items-center sm:justify-between"

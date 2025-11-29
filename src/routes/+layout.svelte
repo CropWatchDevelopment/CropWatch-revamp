@@ -20,7 +20,14 @@
 		facilities: data.facilities,
 		locations: data.locations,
 		devices: data.devices,
-		isLoggedIn: data.isLoggedIn
+		isLoggedIn: data.isLoggedIn ?? false
+	});
+
+	$effect(() => {
+		appState.facilities = data.facilities;
+		appState.locations = data.locations;
+		appState.devices = data.devices;
+		appState.isLoggedIn = data.isLoggedIn ?? false;
 	});
 
 	provideAppState(appState);

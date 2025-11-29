@@ -10,10 +10,10 @@ export type AppStateGetter = () => AppStateState;
 
 export function createAppState(initial: AppState) {
 	let appState = $state({
-		facilities: initial.facilities,
-		locations: initial.locations,
-		devices: initial.devices,
-		isLoggedIn: initial.isLoggedIn,
+		facilities: initial.facilities ?? [],
+		locations: initial.locations ?? [],
+		devices: initial.devices ?? [],
+		isLoggedIn: initial.isLoggedIn ?? false
 	});
 
 	return appState;

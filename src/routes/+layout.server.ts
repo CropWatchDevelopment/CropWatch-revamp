@@ -7,13 +7,18 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		? { access_token: session.access_token, refresh_token: session.refresh_token }
 		: undefined;
 
-	const { nextCursor, ...appState } = await loadInitialAppState(tokens);
-
-	if (!session) {
-		appState.isLoggedIn = false;
-	} else {
-		appState.isLoggedIn = true;
+	try {
+		const { nextCursor, ...appState } = await loadInitialAppState(tokens);
+		appState.isLoggedIn = !!session;
+		return { ...appState, nextCursor };
+	} catch (error) {
+		console.error('Failed to load initial app state', error);
+		return {
+			facilities: [],
+			locations: [],
+			devices: [],
+			isLoggedIn: !!session,
+			nextCursor: null
+		};
 	}
-
-	return { ...appState, nextCursor };
 };
