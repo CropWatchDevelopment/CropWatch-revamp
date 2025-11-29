@@ -89,8 +89,8 @@
 			</div>
 		</div>
 
-		<h1 class="text-center text-lg font-semibold text-slate-50">Welcome back</h1>
-		<p class="mt-1 text-center text-sm text-slate-400">Sign-in to your CropWatch account</p>
+		<h1 class="text-center text-lg font-semibold text-slate-50">Welcome to CropWatch!</h1>
+		<p class="mt-1 text-center text-sm text-slate-400">Sign-in to your account for your latest updates</p>
 
 		{#if form?.message}
 			<p
@@ -137,12 +137,12 @@
 			</CWButton>
 
 			<div class="flex flex-row gap-4">
-				<CWButton type="submit" variant="primary" size="md" fullWidth={true}>
+				<CWButton type="submit" variant="secondary" size="md" fullWidth={true}>
 					<img src={ADD_PERSON_ICON} alt="Sign in icon" class="h-5 w-5" />
 					Create Account
 				</CWButton>
 
-				<CWButton type="submit" variant="primary" size="md" fullWidth={true}>
+				<CWButton type="submit" variant="secondary" size="md" fullWidth={true}>
 					<img src={FORGOT_SHIELD_ICON} alt="Sign in icon" class="h-5 w-5" />
 					Forgot Password
 				</CWButton>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import CWButton from './CWButton.svelte';
 
 	type SortDir = 'asc' | 'desc';
 	type FilterFn<T> = (item: T, search: string) => boolean;
@@ -813,13 +814,13 @@
 													{:else if col.type === 'buttons' && col.buttons?.length}
 														<div class="flex flex-wrap items-center gap-2">
 															{#each col.buttons as btn, bIdx (bIdx)}
-																<button
-																	class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
-																	type="button"
+																<CWButton
+																	class={`${btn.class ?? ''}`}
+																	variant={btn.variant}
 																	onclick={() => btn.onClick?.(item)}
 																>
 																	{btn.label}
-																</button>
+																</CWButton>
 															{/each}
 														</div>
 													{:else}
