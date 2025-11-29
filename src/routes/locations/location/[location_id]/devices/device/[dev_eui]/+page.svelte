@@ -12,6 +12,7 @@
 	import { goto } from '$app/navigation';
 	import BACK_ICON from '$lib/images/icons/back.svg';
 	import SETTINGS_ICON from '$lib/images/icons/settings.svg';
+	import CWCopy from '$lib/components/CWCopy.svelte';
 
 	const getAppState = getContext<AppState>('appState');
 	let appState = $derived(getAppState());
@@ -302,7 +303,7 @@ if (data.initialHistory?.length) {
 			<CWButton
 				variant="secondary"
 				onclick={() => {
-					goto(resolve(`/settings?prev=${page.url.pathname}`));
+					goto(`${page.url.pathname}/settings?prev=${page.url.pathname}`);
 				}}
 			>
 				<img src={SETTINGS_ICON} alt="Go back" class="h-4 w-4" />
@@ -318,7 +319,10 @@ if (data.initialHistory?.length) {
 			<div>
 				<p class="text-xs uppercase tracking-[0.2em] text-slate-500">Temperature sensor</p>
 				<h1 class="mt-1 text-3xl font-semibold text-white">Cold Chain TH-01</h1>
-				<p class="text-sm text-slate-400">Device EUI • 70-B3-D5-43-0F-12</p>
+				<p class="text-sm text-slate-400">
+					Device EUI • 
+					<CWCopy value="70-B3-D5-43-0F-12" size="sm" />
+				</p>
 			</div>
 			<div class="text-right text-sm text-slate-400">
 				<p>Location: Freezer Aisle 01</p>
