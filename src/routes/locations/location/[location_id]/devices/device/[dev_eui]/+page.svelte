@@ -8,6 +8,10 @@
 	import { getContext, onMount } from 'svelte';
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import type { PageData } from './$types';
+	import CWButton from '$lib/components/CWButton.svelte';
+	import { goto } from '$app/navigation';
+	import BACK_ICON from '$lib/images/icons/back.svg';
+	import SETTINGS_ICON from '$lib/images/icons/settings.svg';
 
 	const getAppState = getContext<AppState>('appState');
 	let appState = $derived(getAppState());
@@ -244,24 +248,28 @@
 
 <div class="flex flex-col gap-8 p-6 text-slate-100">
 	<div class="flex flex-wrap items-center justify-between gap-3">
-		<a
-			href={resolve(page.url.searchParams.get('prev') ?? '/locations')}
-			class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-700 hover:bg-slate-900"
-		>
-			<span aria-hidden="true">←</span>
-			Back to locations
-		</a>
-		<div class="flex items-center gap-3">
-			<div class="hidden text-xs uppercase tracking-wide text-slate-400 md:block">
-				Device detail
-			</div>
-			<a
-				href={resolve(`/settings?prev=${page.url.pathname}`)}
-				class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-700 hover:bg-slate-900"
+		<div class="flex flex-row w-full items-center gap-3">
+			<CWButton
+				variant="primary"
+				onclick={() => {
+					goto(resolve(page.url.searchParams.get('prev') ?? '/locations'));
+				}}
 			>
-				<span class="text-xs">⚙</span>
+				<img src={BACK_ICON} alt="Edit device" class="h-4 w-4" />
+				Back
+			</CWButton>
+
+			<span class="flex flex-grow"></span>
+
+			<CWButton
+				variant="secondary"
+				onclick={() => {
+					goto(resolve(`/settings?prev=${page.url.pathname}`));
+				}}
+			>
+				<img src={SETTINGS_ICON} alt="Go back" class="h-4 w-4" />
 				Settings
-			</a>
+			</CWButton>
 		</div>
 	</div>
 

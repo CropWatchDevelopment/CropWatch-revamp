@@ -4,8 +4,6 @@
 	import type { Facility } from '$lib/Interfaces/facility.interface';
 	import type { Location } from '$lib/Interfaces/location.interface';
 
-	// Svelte 5 only: use $props to access props
-
 	let {
 		facilities,
 		locationsForFacility,
@@ -28,85 +26,43 @@
 
 	let search: string = $state('');
 	let viewportWidth = $state(1280);
-	let isMobileDrawerOpen = $state(false);
-	let isCollapsed = $state(false);
-	let peekOpen = $state(false);
-	let currentViewport: 'mobile' | 'tablet' | 'desktop' = 'desktop';
+	let isDrawerOpen = $state(false);
 
-	const isMobile = $derived(viewportWidth < 768);
-	const shouldShowLabels = $derived(!isCollapsed || isMobile || peekOpen);
-	const sidebarWidth = $derived.by(() => {
-		if (isMobile) return 288;
-		return !isCollapsed || peekOpen ? 320 : 84;
-	});
+	// Desktop: always visible, no drawer
+	// Tablet & Mobile: use drawer that slides in
+	const isDesktop = $derived(viewportWidth >= 1280);
+	const useDrawer = $derived(!isDesktop);
+	const sidebarWidth = 320;
 
-	function determineViewport(width: number): 'mobile' | 'tablet' | 'desktop' {
-		if (width < 768) return 'mobile';
-		if (width < 1280) return 'tablet';
-		return 'desktop';
+	function closeDrawer() {
+		isDrawerOpen = false;
 	}
 
-	function applyViewportDefaults(mode: 'mobile' | 'tablet' | 'desktop') {
-		if (mode === 'mobile') {
-			isCollapsed = false;
-			isMobileDrawerOpen = false;
-		} else if (mode === 'tablet') {
-			isCollapsed = true;
-			isMobileDrawerOpen = false;
-		} else {
-			isCollapsed = false;
-		}
+	function toggleDrawer() {
+		isDrawerOpen = !isDrawerOpen;
 	}
 
 	function handleResize(width: number) {
 		viewportWidth = width;
-		const mode = determineViewport(width);
-		if (mode !== currentViewport) {
-			currentViewport = mode;
-			applyViewportDefaults(mode);
-		}
-	}
-
-	function closeMobileDrawer() {
-		isMobileDrawerOpen = false;
-	}
-
-	function toggleCollapse() {
-		if (isMobile) {
-			isMobileDrawerOpen = !isMobileDrawerOpen;
-			return;
-		}
-		isCollapsed = !isCollapsed;
-	}
-
-	function handleMouseEnter() {
-		if (!isMobile && isCollapsed) {
-			peekOpen = true;
-		}
-	}
-
-	function handleMouseLeave() {
-		if (!isMobile) {
-			peekOpen = false;
+		// Close drawer when switching to desktop
+		if (width >= 1280) {
+			isDrawerOpen = false;
 		}
 	}
 
 	onMount(() => {
 		if (typeof window === 'undefined') return;
-		currentViewport = determineViewport(window.innerWidth);
 		handleResize(window.innerWidth);
 
 		const resizeHandler = () => handleResize(window.innerWidth);
 		const globalToggle = () => {
-			if (isMobile) {
-				isMobileDrawerOpen = !isMobileDrawerOpen;
-			} else {
-				isCollapsed = !isCollapsed;
+			if (useDrawer) {
+				toggleDrawer();
 			}
 		};
 		const escHandler = (event: KeyboardEvent) => {
 			if (event.key === 'Escape') {
-				closeMobileDrawer();
+				closeDrawer();
 			}
 		};
 
@@ -122,100 +78,72 @@
 	});
 
 	onDestroy(() => {
-		closeMobileDrawer();
-		peekOpen = false;
+		closeDrawer();
 	});
 </script>
 
 <!-- Responsive sidebar -->
-<div class="relative h-full bg-slate-900/75">
-	{#if isMobile && isMobileDrawerOpen}
+<div class="relative h-full">
+	<!-- Backdrop overlay for drawer mode -->
+	{#if useDrawer && isDrawerOpen}
 		<button
 			type="button"
-			class="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm md:hidden"
-			onclick={closeMobileDrawer}
+			class="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm"
+			onclick={closeDrawer}
 			aria-label="Close sidebar overlay"
 		></button>
 	{/if}
 
 	<aside
-		onmouseenter={handleMouseEnter}
-		onmouseleave={handleMouseLeave}
-		class={`flex flex-col gap-4 border-r h-full border-slate-800 bg-slate-900/75 p-4 transition-all duration-200 ease-in-out ${
-			isMobile
+		class={`flex flex-col gap-4 border-r h-full border-slate-800 bg-slate-900 p-4 transition-all duration-200 ease-in-out ${
+			useDrawer
 				? `fixed inset-y-0 left-0 z-40 transform shadow-2xl shadow-black/40 ${
-						isMobileDrawerOpen ? 'translate-x-0' : '-translate-x-full'
+						isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
 					}`
 				: 'relative'
 		}`}
 		style={`width:${sidebarWidth}px;`}
 	>
+		<!-- Header with close button (only in drawer mode when open) -->
 		<div class="flex items-center justify-between gap-2">
-			<span
-				class={`${
-					shouldShowLabels
-						? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
-						: 'sr-only'
-				}`}
-			>
+			<span class="text-xs font-semibold uppercase tracking-wide text-slate-400">
 				Navigation
 			</span>
-			<button
-				onclick={toggleCollapse}
-				class={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 text-xs text-slate-200 transition hover:bg-slate-800 ${
-					isMobile ? 'md:hidden' : ''
-				}`}
-				aria-label={isMobile
-					? isMobileDrawerOpen
-						? 'Close sidebar'
-						: 'Open sidebar'
-					: isCollapsed
-						? 'Expand sidebar'
-						: 'Collapse sidebar'}
-			>
-				{#if isMobile}
-					{isMobileDrawerOpen ? '×' : '☰'}
-				{:else}
-					{isCollapsed ? '≫' : '≪'}
-				{/if}
-			</button>
+			{#if useDrawer && isDrawerOpen}
+				<button
+					onclick={closeDrawer}
+					class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 text-slate-200 transition hover:bg-slate-800"
+					aria-label="Close sidebar"
+				>
+					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			{/if}
 		</div>
 
+		<!-- Search -->
 		<div>
-			<h2
-				class={`${
-					shouldShowLabels
-						? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
-						: 'sr-only'
-				}`}
-			>
+			<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">
 				Global search
 			</h2>
-			<div
-				class={`mt-2 flex items-center gap-2 rounded-xl bg-slate-900 ring-1 ring-slate-700/70 ${
-					shouldShowLabels ? 'px-3 py-2' : 'justify-center px-2 py-2'
-				}`}
-			>
-				<span class="text-sm text-slate-400">⌕</span>
-				{#if shouldShowLabels}
-					<input
-						bind:value={search}
-						class="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-slate-500"
-						placeholder="Search facility, location, device, ID…"
-					/>
-				{/if}
+			<div class="mt-2 flex items-center gap-2 rounded-xl bg-slate-800/50 px-3 py-2 ring-1 ring-slate-700/70">
+				<svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+				</svg>
+				<input
+					bind:value={search}
+					class="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-slate-500"
+					placeholder="Search facility, location, device…"
+				/>
 			</div>
 		</div>
 
+		<!-- Facilities & Locations -->
 		<div class="flex flex-1 min-h-0 flex-col gap-3">
+			<!-- Facilities -->
 			<div class="flex flex-1 min-h-0 flex-col">
-				<h2
-					class={`${
-						shouldShowLabels
-							? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
-							: 'sr-only'
-					}`}
-				>
+				<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">
 					Facilities
 				</h2>
 				<div class="mt-2 flex-1 space-y-1 overflow-y-auto pr-1 text-sm">
@@ -229,16 +157,12 @@
 						}`}
 					>
 						<span class="flex items-center gap-2">
-							<span
-								class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-slate-800 text-[10px] text-slate-300 ring-1 ring-slate-700/60"
-							>
+							<span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-slate-800 text-[10px] text-slate-300 ring-1 ring-slate-700/60">
 								all
 							</span>
-							<span class={shouldShowLabels ? '' : 'sr-only'}>All facilities</span>
+							<span>All facilities</span>
 						</span>
-						<span class={`text-xs text-slate-500 ${shouldShowLabels ? '' : 'sr-only'}`}>
-							{devices?.length}
-						</span>
+						<span class="text-xs text-slate-500">{devices?.length}</span>
 					</button>
 
 					{#each facilities as f (f.id)}
@@ -254,18 +178,12 @@
 							}`}
 						>
 							<span class="flex items-center gap-2">
-								<span
-									class="inline-flex h-5 w-8 items-center justify-center rounded-md bg-slate-900 text-[10px] font-semibold tracking-tight text-slate-200 ring-1 ring-slate-700/70"
-								>
+								<span class="inline-flex h-5 w-8 items-center justify-center rounded-md bg-slate-900 text-[10px] font-semibold tracking-tight text-slate-200 ring-1 ring-slate-700/70">
 									{f.code}
 								</span>
-								<span class={`${shouldShowLabels ? 'truncate' : 'sr-only'}`} title={f.name}>
-									{f.name}
-								</span>
+								<span class="truncate" title={f.name}>{f.name}</span>
 							</span>
-							<span
-								class={`flex items-center gap-1 text-xs text-slate-500 ${shouldShowLabels ? '' : 'sr-only'}`}
-							>
+							<span class="flex items-center gap-1 text-xs text-slate-500">
 								{#if hasAlert}
 									<span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
 								{/if}
@@ -276,14 +194,9 @@
 				</div>
 			</div>
 
+			<!-- Locations -->
 			<div class="flex flex-1 min-h-0 flex-col border-t border-slate-800 pt-3">
-				<h2
-					class={`flex ${
-						shouldShowLabels
-							? 'text-xs font-semibold uppercase tracking-wide text-slate-400'
-							: 'sr-only'
-					}`}
-				>
+				<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">
 					Locations
 				</h2>
 				<div class="mt-2 flex-1 space-y-1 overflow-y-auto pr-1 text-sm">
@@ -293,10 +206,8 @@
 							selectedLocationId === 'all' ? 'bg-slate-800' : ''
 						}`}
 					>
-						<span class={shouldShowLabels ? '' : 'sr-only'}>All locations</span>
-						<span class={`text-xs text-slate-500 ${shouldShowLabels ? '' : 'sr-only'}`}>
-							{devices?.length}
-						</span>
+						<span>All locations</span>
+						<span class="text-xs text-slate-500">{devices?.length}</span>
 					</button>
 
 					{#each locationsForFacility as loc (loc.id)}
@@ -309,41 +220,34 @@
 									selectedLocationId === loc.id ? 'bg-slate-800' : ''
 								}`}
 							>
-								<span class={`${shouldShowLabels ? 'truncate' : 'sr-only'}`} title={loc.name}>
-									{loc.name}
-								</span>
-								<span
-									class={`flex items-center gap-1 text-xs text-slate-500 ${
-										shouldShowLabels ? '' : 'sr-only'
-									}`}
-								>
+								<span class="truncate" title={loc.name}>{loc.name}</span>
+								<span class="flex items-center gap-1 text-xs text-slate-500">
 									{#if hasAlert}
 										<span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
 									{/if}
 									<span>{locDevices.length}</span>
 								</span>
 							</button>
-							<button class="hidden group-hover:flex px-1">⋮</button>
+							<button class="hidden group-hover:flex px-1 text-slate-400 hover:text-slate-200">⋮</button>
 						</span>
 					{/each}
 				</div>
 			</div>
 		</div>
 
-		<div class="mt-auto space-y-2 text-xs text-slate-500">
+		<!-- Stats Footer -->
+		<div class="mt-auto space-y-2 border-t border-slate-800 pt-3 text-xs text-slate-500">
 			<div class="flex items-center justify-between">
-				<span class={shouldShowLabels ? '' : 'sr-only'}>Total in view</span>
-				<span class={`font-mono text-slate-200 ${shouldShowLabels ? '' : 'sr-only'}`}>{total}</span>
+				<span>Total in view</span>
+				<span class="font-mono text-slate-200">{total}</span>
 			</div>
 			<div class="flex items-center justify-between">
-				<span class={shouldShowLabels ? '' : 'sr-only'}>Alerts</span>
-				<span class={`font-mono text-amber-300 ${shouldShowLabels ? '' : 'sr-only'}`}>{alerts}</span
-				>
+				<span>Alerts</span>
+				<span class="font-mono text-amber-300">{alerts}</span>
 			</div>
 			<div class="flex items-center justify-between">
-				<span class={shouldShowLabels ? '' : 'sr-only'}>Offline</span>
-				<span class={`font-mono text-rose-300 ${shouldShowLabels ? '' : 'sr-only'}`}>{offline}</span
-				>
+				<span>Offline</span>
+				<span class="font-mono text-rose-300">{offline}</span>
 			</div>
 		</div>
 	</aside>

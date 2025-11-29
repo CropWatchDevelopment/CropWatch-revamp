@@ -7,6 +7,17 @@
 	import logo from '$lib/images/cropwatch_static.svg';
 	import LOCK_ICON from '$lib/images/icons/lock.svg';
 	import LOGOUT_ICON from '$lib/images/icons/logout.svg';
+	import type { AppState } from '$lib/Interfaces/appState.interface';
+	import { getContext } from 'svelte';
+	import { getToastContext } from '$lib/components/toast';
+    const toast = getToastContext();
+
+	const getAppState = getContext<AppState>('appState');
+	let appState = $derived(getAppState());
+
+	let { isLoggedIn } = $props<{
+		isLoggedIn: boolean;
+	}>();
 
 	function toggleSidebar() {
 		if (typeof window === 'undefined') return;
@@ -22,12 +33,15 @@
 			});
 			if (!res.ok) throw new Error(`Logout failed with ${res.status}`);
 			await invalidateAll();
-			logoutDialog = false;
 			goto(resolve('/auth'));
+			logoutDialog = false;
 			loggingOutLoading = false;
+			appState.isLoggedIn = false;
+			toast.success('You have been logged out.', { title: 'Logged Out' });
 		} catch (error) {
 			console.error('Logout failed:', error);
 			loggingOutLoading = false;
+			toast.error('Logout failed. Please try again.', { title: 'Error' });
 		}
 	}
 
@@ -52,11 +66,12 @@
 		<div class="corner">
 			<a href="/">
 				<img src={logo} alt="CropWatch" />
+				<p class="text-slate-100 text-xl ml-2">𝘾𝙧𝙤𝙥𝙒𝙖𝙩𝙘𝙝</p>
 			</a>
 		</div>
 	</div>
 
-	<nav class="hidden md:flex">
+	<!-- <nav class="hidden md:flex">
 		<svg viewBox="0 0 2 3" aria-hidden="true">
 			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
 		</svg>
@@ -71,12 +86,14 @@
 		<svg viewBox="0 0 2 3" aria-hidden="true">
 			<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
 		</svg>
-	</nav>
+	</nav> -->
 
-	<CWButton variant="secondary" onclick={() => (logoutDialog = true)}>
-		<img src={LOCK_ICON} alt="Log out of account" class="h-4 w-4" />
-		Log Out
-	</CWButton>
+	{#if isLoggedIn}
+		<CWButton variant="secondary" onclick={() => (logoutDialog = true)}>
+			<img src={LOCK_ICON} alt="Log out of account" class="h-4 w-4" />
+			Log Out
+		</CWButton>
+	{/if}
 </header>
 
 <CWDialog
@@ -118,14 +135,15 @@
 	.corner a {
 		display: flex;
 		align-items: center;
-		justify-content: center;
 		width: 100%;
 		height: 100%;
+		text-decoration: none;
 	}
 
 	.corner img {
-		width: 2em;
-		height: 2em;
+		width: 2.5em;
+		height: 2.5em;
+		margin-right: 0.5em;
 		object-fit: contain;
 	}
 

@@ -12,21 +12,9 @@ export function createAppState(initial: AppState) {
 	let appState = $state({
 		facilities: initial.facilities,
 		locations: initial.locations,
-		devices: initial.devices
+		devices: initial.devices,
+		isLoggedIn: initial.isLoggedIn,
 	});
-
-	// Demo data ticker: nudge device readings every 2s
-	// $effect(() => {
-	// 	const interval = setInterval(() => {
-	// 		appState.devices = appState.devices.map((device) => {
-	// 			const delta = (Math.random() * 2 - 1).toFixed(1);
-	// 			const temperature_c = parseFloat((device.temperature_c + parseFloat(delta)).toFixed(1));
-	// 			return { ...device, temperature_c };
-	// 		});
-	// 	}, 2000);
-
-	// 	return () => clearInterval(interval);
-	// });
 
 	return appState;
 }

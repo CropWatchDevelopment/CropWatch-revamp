@@ -136,7 +136,7 @@
 					class="heatmap-grid grid flex-1 gap-[3px] rounded-xl border border-slate-800 bg-slate-900/70 p-3"
 					style="grid-template-columns: repeat(auto-fill, minmax(24px, 1fr)); grid-auto-rows: 24px;"
 				>
-					{#each heatmapData as cell, idx (cell.label)}
+					{#each heatmapData as cell, idx (idx)}
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class={`heatmap-cell relative cursor-pointer rounded-md shadow-sm ${

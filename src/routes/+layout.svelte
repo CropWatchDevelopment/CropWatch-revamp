@@ -9,12 +9,18 @@
 	import { createAppState, provideAppState, useAppState } from '$lib/data/AppState.svelte';
 	import { setContext } from 'svelte';
 	import type { LayoutProps } from './$types';
+	import { CWToastContainer, createToastContext } from '$lib/components/toast';
 
 	let { data, supabase, children } = $props<LayoutProps>();
+
+	// Create toast context so all child components can use it
+	createToastContext();
+
 	let appState = createAppState({
 		facilities: data.facilities,
 		locations: data.locations,
-		devices: data.devices
+		devices: data.devices,
+		isLoggedIn: data.isLoggedIn
 	});
 
 	provideAppState(appState);
@@ -34,31 +40,30 @@
 			: appState.locations.filter((l: Location) => l.facilityId === selectedFacilityId)
 	);
 
-	const logout = async () => {
-		const { error } = await supabase.auth.signOut();
-		if (error) console.error(error);
-		// Optionally, after sign-out you can redirect or let the UI update automatically.
-	};
-
 	const total = $derived(appState.devices.length);
 	const alerts = $derived(appState.devices.filter((d: Device) => d.hasAlert).length);
 	const offline = $derived(appState.devices.filter((d: Device) => d.status === 'offline').length);
 </script>
 
 <div class="app flex h-screen flex-col overflow-hidden bg-slate-950 text-slate-100">
+	<CWToastContainer position="top-right" />
 	<div class="flex min-h-0 flex-1 flex-row overflow-hidden">
-		<Sidebar
-			facilities={appState.facilities}
-			devices={appState.devices}
-			{locationsForFacility}
-			bind:selectedFacilityId
-			bind:selectedLocationId
-			{total}
-			{alerts}
-			{offline}
-		/>
+		{#if appState.isLoggedIn}
+			<Sidebar
+				facilities={appState.facilities}
+				devices={appState.devices}
+				{locationsForFacility}
+				bind:selectedFacilityId
+				bind:selectedLocationId
+				{total}
+				{alerts}
+				{offline}
+			/>
+		{/if}
 		<main class="flex min-h-0 flex-1 flex-col overflow-auto">
-			<Header />
+			{#if appState.isLoggedIn}
+				<Header isLoggedIn={appState.isLoggedIn} />
+			{/if}
 			{@render children()}
 		</main>
 	</div>

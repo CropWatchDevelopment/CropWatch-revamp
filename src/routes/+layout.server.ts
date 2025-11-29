@@ -8,5 +8,12 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		: undefined;
 
 	const { nextCursor, ...appState } = await loadInitialAppState(tokens);
+
+	if (!session) {
+		appState.isLoggedIn = false;
+	} else {
+		appState.isLoggedIn = true;
+	}
+
 	return { ...appState, nextCursor };
 };

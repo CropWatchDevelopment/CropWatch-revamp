@@ -6,4 +6,5 @@ export interface AppState {
     facilities: Facility[];
     locations: Location[];
     devices: Device[];
+    isLoggedIn: boolean;
 }
