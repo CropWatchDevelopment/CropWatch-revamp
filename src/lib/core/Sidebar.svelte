@@ -3,6 +3,8 @@
 	import type { Device } from '$lib/Interfaces/device.interface';
 	import type { Facility } from '$lib/Interfaces/facility.interface';
 	import type { Location } from '$lib/Interfaces/location.interface';
+	import LOCATION_ICON from '$lib/images/icons/location.svg';
+	import GLOBE_LOCATION_PIN_ICON from '$lib/images/icons/globe_location_pin.svg';
 
 	let {
 		facilities,
@@ -206,7 +208,10 @@
 							selectedLocationId === 'all' ? 'bg-slate-800' : ''
 						}`}
 					>
-						<span>All locations</span>
+						<span>
+							<img src={GLOBE_LOCATION_PIN_ICON} alt="Globe location pin icon" class="inline-block h-4 w-4 mr-1" />
+							All locations
+						</span>
 						<span class="text-xs text-slate-500">{devices?.length}</span>
 					</button>
 
@@ -220,7 +225,10 @@
 									selectedLocationId === loc.id ? 'bg-slate-800' : ''
 								}`}
 							>
-								<span class="truncate" title={loc.name}>{loc.name}</span>
+								<span class="truncate" title={loc.name}>
+									<img src={LOCATION_ICON} alt="Location icon" class="inline-block h-4 w-4 mr-1" />
+									{loc.name}
+								</span>
 								<span class="flex items-center gap-1 text-xs text-slate-500">
 									{#if hasAlert}
 										<span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>

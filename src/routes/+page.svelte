@@ -10,9 +10,12 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { startDeviceRealtime } from '$lib/data/SourceOfTruth.svelte';
 
-	import DASHBOARD_ICON from '$lib/images/icons/dashboard.svg';
-	import CHART_ICON from '$lib/images/icons/bar_chart.svg';
-	import { goto } from '$app/navigation';
+	import NOTIFICATIONS_ICON from '$lib/images/icons/notifications.svg';
+	import CWButton from '$lib/components/CWButton.svelte';
+	import CWPill from '$lib/components/CWPill.svelte';
+	import CWResizablePanel from '$lib/components/CWResizablePanel.svelte';
+	import { persisted } from '$lib/data/localStorage.svelte';
+	import CWDonutChart, { type DonutSegment } from '$lib/components/CWDonutChart.svelte';
 
 	const getAppState = useAppState();
 	let appState = $derived(getAppState());
@@ -25,7 +28,7 @@
 	let selectedFacilityId = $derived(filters.getFacility());
 	let selectedLocationId = $derived(filters.getLocation());
 	let tableLoading: boolean = $state<boolean>(false);
-	let showGraphDisplay: boolean = $state<boolean>(false);
+	let showAlertPanel = persisted('showAlertPanel', { open: true });
 
 	// Status helpers
 	const statusConfig: Record<
@@ -101,6 +104,14 @@
 		return counts;
 	});
 
+	// Reactive donut chart data based on actual device status counts
+	const statusData = $derived<DonutSegment[]>([
+		{ label: 'Online', value: statusCounts.online, color: '#10b981' },
+		{ label: 'Offline', value: statusCounts.offline, color: '#ef4444' },
+		{ label: 'Alert', value: statusCounts.alert, color: '#f59e0b' },
+		{ label: 'Loading', value: statusCounts.loading, color: '#64748b' }
+	]);
+
 	const facilityBreakdown = $derived.by(() => {
 		const counts: Record<string, { name: string; count: number }> = {};
 
@@ -161,6 +172,7 @@
 		{ key: 'name', label: 'Device', type: 'stacked', secondaryKey: 'id', sortable: true },
 		{ key: 'temperatureC', label: 'Temp', type: 'number', suffix: ' °C', sortable: true },
 		{ key: 'humidity', label: 'Humidity', type: 'number', suffix: ' %RH', sortable: true },
+		{ key: 'co2', label: 'CO₂', type: 'number', suffix: ' ppm', sortable: true },
 		{
 			key: 'status',
 			label: 'Status',
@@ -190,9 +202,7 @@
 					label: 'View',
 					onClick: (item: Device) => {
 						tableLoading = true;
-						goto(
-							`/locations/location/${item.locationId}/devices/device/${item.id}?prev=${window.location.pathname}`
-						);
+						window.location.href = `/locations/location/${item.locationId}/devices/device/${item.id}?prev=${window.location.pathname}`;
 					}
 				}
 			]
@@ -288,16 +298,15 @@
 				</div>
 				<span class="flex flex-1">End of top toolbar</span>
 				<div id="Dashboard__Overview__actions" class="flex items-center gap-3">
-					<!-- <button>
-						<img src={DASHBOARD_ICON} alt="Dashboard Icon" />
-					</button> -->
-					<button class="text-slate-400 hover:text-slate-200">
-						<img
-							src={CHART_ICON}
-							onclick={() => (showGraphDisplay = !showGraphDisplay)}
-							alt="Chart Icon"
-						/>
-					</button>
+					<CWPill value={3} color="error" pulse position="bottom-right">
+						<CWButton
+							variant="secondary"
+							size="sm"
+							onclick={() => (showAlertPanel.value.open = !showAlertPanel.value.open)}
+						>
+							<img src={NOTIFICATIONS_ICON} alt="Notifications Icon" />
+						</CWButton>
+					</CWPill>
 				</div>
 			</div>
 		</header>
@@ -307,7 +316,7 @@
 			<div class="flex h-full min-h-0 flex-col overflow-hidden px-6 pb-6 pt-2">
 				<!-- Device Table -->
 				<div
-					class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#21213c]"
+					class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#21213c] mb-2"
 				>
 					<CWTable
 						items={tableRows}
@@ -322,14 +331,35 @@
 					/>
 				</div>
 
-				{#if showGraphDisplay}
-					<section class="mt-4 grid gap-4 lg:grid-cols-3 sm:grid-cols-2">
+				<CWResizablePanel
+					bind:open={showAlertPanel.value.open}
+					title="Alerts"
+					minHeight={180}
+					maxHeight={600}
+					defaultHeight={600}
+				>
+					<div class="grid gap-4 lg:grid-cols-3 sm:grid-cols-2">
 						<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
 							<div class="flex items-center justify-between text-xs text-slate-400">
 								<span>Status mix</span>
 								<span class="text-slate-200">Total {total}</span>
 							</div>
-							<div class="mt-3 flex h-10 overflow-hidden rounded-lg ring-1 ring-slate-800/80">
+							<!-- <div
+								class="mt-4 flex h-28 items-center justify-center rounded-lg border border-slate-800/70 bg-slate-900/60"
+							> -->
+								<!-- <div class="text-center">
+									<div class="text-3xl font-semibold text-slate-50">{total ?? 0}</div>
+									<div class="text-xs text-slate-400">devices tracked</div>
+								</div> -->
+								<CWDonutChart
+									data={statusData}
+									size={180}
+									thickness={0.4}
+									centerSubLabel="Devices"
+									legendPosition="right"
+								/>
+							<!-- </div> -->
+							<!-- <div class="mt-3 flex h-10 overflow-hidden rounded-lg ring-1 ring-slate-800/80">
 								{#if total}
 									{#each STATUS_TYPES as status (status)}
 										{#if statusCounts[status]}
@@ -342,8 +372,8 @@
 								{:else}
 									<div class="flex-1 bg-slate-800/60"></div>
 								{/if}
-							</div>
-							<div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-300">
+							</div> -->
+							<!-- <div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-300">
 								{#each STATUS_TYPES as status (status)}
 									<div class="flex items-center gap-1">
 										<span class={`h-2 w-2 rounded-full ${statusConfig[status].dotClass}`}></span>
@@ -351,7 +381,7 @@
 										<span>{statusConfig[status].label}</span>
 									</div>
 								{/each}
-							</div>
+							</div> -->
 						</div>
 
 						<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
@@ -387,8 +417,8 @@
 
 						<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
 							<div class="flex items-center justify-between text-xs text-slate-400">
-								<span>Environment snapshot</span>
-								<span class="text-slate-200">°C / %RH</span>
+								<span>Alert List</span>
+								<span class="text-slate-200">Reported Time</span>
 							</div>
 							<div class="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-200">
 								<div class="rounded-lg border border-slate-800/60 bg-slate-900/70 p-3">
@@ -421,8 +451,8 @@
 								</div>
 							</div>
 						</div>
-					</section>
-				{/if}
+					</div>
+				</CWResizablePanel>
 			</div>
 		</section>
 	</main>

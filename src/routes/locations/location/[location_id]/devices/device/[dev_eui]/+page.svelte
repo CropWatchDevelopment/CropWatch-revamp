@@ -21,19 +21,20 @@
 		appState.devices.find((d: Device) => d.id === page.params.dev_eui)
 	);
 
-	let history: DeviceDataHistory[] = $state([]);
+let history: DeviceDataHistory[] = $state([]);
 	let historyLoading = $state(true);
 	let historyError: string | null = $state(null);
 
-	if (data.initialHistory?.length) {
-		history = data.initialHistory.map((p) => ({
-			timestamp: p.timestamp || new Date().toISOString(),
-			temperature: p.primary ?? 0,
-			humidity: p.secondary ?? 0,
-			alert: false
-		}));
-		historyLoading = false;
-	}
+if (data.initialHistory?.length) {
+	history = data.initialHistory.map((p) => ({
+		timestamp: p.timestamp || new Date().toISOString(),
+		temperature: p.primary ?? 0,
+		humidity: p.secondary ?? 0,
+		co2: p.co2 ?? null,
+		alert: false
+	}));
+	historyLoading = false;
+}
 
 	onMount(async () => {
 		if (history.length) return;
@@ -51,6 +52,7 @@
 					timestamp: p.timestamp || new Date().toISOString(),
 					temperature: p.primary ?? 0,
 					humidity: p.secondary ?? 0,
+					co2: p.co2 ?? null,
 					alert: false
 				}));
 			} else if (device) {
@@ -59,6 +61,7 @@
 						timestamp: device.lastSeen,
 						temperature: device.temperatureC,
 						humidity: device.humidity,
+						co2: device.co2 ?? null,
 						alert: device.hasAlert
 					}
 				];
@@ -88,6 +91,7 @@
 
 	const temperatureValues = $derived(history.map((entry) => entry.temperature));
 	const humidityValues = $derived(history.map((entry) => entry.humidity));
+	const co2Values = $derived(history.map((entry) => entry.co2 ?? 0));
 
 	function summarize(values: number[]) {
 		if (!values.length) return { high: 0, low: 0, avg: 0, stdDeviation: 0 };
@@ -110,8 +114,10 @@
 
 	const temperatureStats = $derived(summarize(temperatureValues));
 	const humidityStats = $derived(summarize(humidityValues));
+	const co2Stats = $derived(summarize(co2Values));
 	const temperatureMedian = $derived(median(temperatureValues));
 	const humidityMedian = $derived(median(humidityValues));
+	const co2Median = $derived(median(co2Values));
 	const readingCount = $derived(history.length);
 	const temperatureDelta = $derived.by(() =>
 		history[1] ? latestReading.temperature - history[1].temperature : 0
@@ -160,6 +166,26 @@
 				knob: 'bg-sky-400',
 				badge: 'text-sky-300'
 			}
+		},
+		{
+			key: 'co2',
+			label: 'CO₂',
+			unit: 'ppm',
+			current: history[0]?.co2 ?? device?.co2 ?? 0,
+			delta: history[1] ? (history[0]?.co2 ?? 0) - (history[1]?.co2 ?? 0) : 0,
+			min: co2Stats.low,
+			max: co2Stats.high,
+			avg: co2Stats.avg,
+			median: co2Median,
+			stdDeviation: co2Stats.stdDeviation,
+			range: co2Stats.high - co2Stats.low,
+			count: readingCount,
+			palette: {
+				accent: 'text-emerald-300',
+				bar: 'bg-emerald-400/70',
+				knob: 'bg-emerald-400',
+				badge: 'text-emerald-200'
+			}
 		}
 	]);
 
@@ -207,7 +233,8 @@
 
 	const heatmapPalette = {
 		temperature: ['bg-sky-900', 'bg-sky-800', 'bg-sky-700', 'bg-sky-600', 'bg-rose-500'],
-		humidity: ['bg-slate-800', 'bg-teal-700', 'bg-teal-500', 'bg-teal-400', 'bg-cyan-300']
+		humidity: ['bg-slate-800', 'bg-teal-700', 'bg-teal-500', 'bg-teal-400', 'bg-cyan-300'],
+		co2: ['bg-slate-800', 'bg-lime-800', 'bg-lime-600', 'bg-amber-500', 'bg-red-500']
 	};
 
 	const formatter = new Intl.DateTimeFormat('en', {
@@ -236,6 +263,17 @@
 			points: chronologicalHistory.map((entry) => ({
 				label: formatHour(entry.timestamp),
 				value: entry.humidity,
+				alert: entry.alert
+			}))
+		},
+		co2: {
+			key: 'co2',
+			label: 'CO₂',
+			unit: 'ppm',
+			palette: heatmapPalette.co2,
+			points: chronologicalHistory.map((entry) => ({
+				label: formatHour(entry.timestamp),
+				value: entry.co2 ?? 0,
 				alert: entry.alert
 			}))
 		}
@@ -426,6 +464,7 @@
 					<tr>
 						<th class="px-4 py-3 text-left">Timestamp (UTC)</th>
 						<th class="px-4 py-3 text-left">Temperature</th>
+						<th class="px-4 py-3 text-left">CO₂</th>
 						<th class="px-4 py-3 text-left">Humidity</th>
 						<th class="px-4 py-3 text-left">Alert</th>
 						<th class="px-4 py-3 text-left">Notes</th>
@@ -447,6 +486,13 @@
 								{formatHour(entry.timestamp)}
 							</td>
 							<td class="px-4 py-3 font-semibold text-white">{entry.temperature.toFixed(1)}°C</td>
+							<td class="px-4 py-3 text-slate-100">
+								{#if entry.co2 != null}
+									{entry.co2}
+								{:else}
+									—
+								{/if}
+							</td>
 							<td class="px-4 py-3 text-slate-100">{entry.humidity}%</td>
 							<td class="px-4 py-3">
 								<span

@@ -8,6 +8,7 @@ export interface Device {
     facilityId: string;
     temperatureC: number;
     humidity: number;
+    co2?: number | null;
     lastSeen: string;
     status: DeviceStatus;
     hasAlert: boolean;

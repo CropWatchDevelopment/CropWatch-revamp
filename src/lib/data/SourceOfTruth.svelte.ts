@@ -56,6 +56,8 @@ const isKelvin = (kind: string | null | undefined) =>
 	!!kind && (kind.toLowerCase().includes('_k') || kind.toLowerCase().endsWith('k'));
 const isHumidityKind = (kind: string | null | undefined) =>
 	!!kind && kind.toLowerCase().includes('humid');
+const isCo2Kind = (kind: string | null | undefined) =>
+	!!kind && kind.toLowerCase().includes('co2');
 
 function normalizeTemperature(kind: string | null | undefined, value: number | null) {
 	if (value == null) return null;
@@ -116,6 +118,13 @@ function mapDevice(row: DeviceJoined): Device {
 			? row.primary_data ?? null
 			: null;
 
+	const co2 =
+		isCo2Kind(primaryKind) && row.primary_data != null
+			? Number(row.primary_data)
+			: isCo2Kind(secondaryKind) && row.secondary_data != null
+				? Number(row.secondary_data)
+				: null;
+
 	const loc = row.location;
 	const lastSeen = row.last_data_updated_at ?? row.installed_at ?? '';
 	const status = computeStatus(lastSeen, row.upload_interval, deviceType?.default_upload_interval);
@@ -127,6 +136,7 @@ function mapDevice(row: DeviceJoined): Device {
 		facilityId: loc?.owner_id ? String(loc.owner_id) : `facility-${loc?.location_id ?? 'unknown'}`,
 		temperatureC: temperatureC ?? 0,
 		humidity: humidity ?? 0,
+		co2: co2 ?? null,
 		lastSeen,
 		status,
 		hasAlert: false,
@@ -332,6 +342,7 @@ export type DeviceHistoryPoint = {
 	timestamp: string;
 	primary: number | null;
 	secondary: number | null;
+	co2?: number | null;
 	battery?: number | null;
 	raw: Record<string, unknown>;
 };
@@ -369,6 +380,10 @@ export async function fetchDeviceHistory({
 	const table = deviceRow.device_type.data_table_v2;
 	const primaryKey = deviceRow.device_type.primary_data_v2;
 	const secondaryKey = deviceRow.device_type.secondary_data_v2;
+	const co2Key =
+		(primaryKey && primaryKey.toLowerCase().includes('co2') && primaryKey) ||
+		(secondaryKey && secondaryKey.toLowerCase().includes('co2') && secondaryKey) ||
+		'co2';
 	const sinceIso = hoursBack ? new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString() : null;
 
 	let query = supabase
@@ -394,6 +409,16 @@ export async function fetchDeviceHistory({
 			const primary = primaryKey ? Number(row[primaryKey] ?? null) : null;
 			const secondary = secondaryKey ? Number(row[secondaryKey] ?? null) : null;
 			const battery = 'battery_level' in row ? Number(row['battery_level']) : null;
+			const co2Value = co2Key ? Number(row[co2Key] ?? null) : null;
+			const fallbackCo2 =
+				co2Value && Number.isFinite(co2Value)
+					? co2Value
+					: (() => {
+							const foundKey = Object.keys(row).find((k) => k.toLowerCase().includes('co2'));
+							if (!foundKey) return null;
+							const val = Number(row[foundKey]);
+							return Number.isFinite(val) ? val : null;
+						})();
 
 			return {
 				timestamp:
@@ -402,6 +427,7 @@ export async function fetchDeviceHistory({
 					'',
 				primary: Number.isFinite(primary) ? (primary as number) : null,
 				secondary: Number.isFinite(secondary) ? (secondary as number) : null,
+				co2: Number.isFinite(co2Value ?? fallbackCo2) ? (co2Value ?? fallbackCo2) : null,
 				battery: Number.isFinite(battery) ? (battery as number) : null,
 				raw: row
 			};
