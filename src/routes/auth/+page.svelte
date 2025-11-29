@@ -2,6 +2,7 @@
 	let { form } = $props<{
 		form: { message?: string } | null;
 	}>();
+
 </script>
 
 <main class="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
@@ -15,7 +16,7 @@
 			</p>
 		{/if}
 
-		<form method="POST" class="mt-4 space-y-4">
+		<form method="POST" action="?/login" class="mt-4 space-y-4">
 			<label class="block text-sm text-slate-300">
 				<span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Email</span>
 				<input

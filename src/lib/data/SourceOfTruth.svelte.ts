@@ -6,6 +6,8 @@ import type { Device } from '$lib/Interfaces/device.interface';
 import type { Facility } from '$lib/Interfaces/facility.interface';
 import type { Location } from '$lib/Interfaces/location.interface';
 import type { AppStateState } from '$lib/data/AppState.svelte';
+import { goto } from '$app/navigation';
+import { redirect } from '@sveltejs/kit';
 
 type DeviceRow = Database['public']['Tables']['cw_devices']['Row'];
 type LocationRow = Database['public']['Tables']['cw_locations']['Row'];
@@ -256,6 +258,8 @@ export async function fetchDevicePage({
 	session?: AuthSession;
 }) {
 	const supabase = await createSupabaseClient(session);
+
+
 
 	let query = supabase
 		.from('cw_devices')

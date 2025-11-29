@@ -10,6 +10,9 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { startDeviceRealtime } from '$lib/data/SourceOfTruth.svelte';
 
+	import DASHBOARD_ICON from '$lib/images/icons/dashboard.svg';
+	import CHART_ICON from '$lib/images/icons/bar_chart.svg';
+
 	const getAppState = useAppState();
 	let appState = $derived(getAppState());
 
@@ -80,6 +83,63 @@
 	const total = $derived(filteredDevices?.length);
 	const alerts = $derived(filteredDevices?.filter((d: Device) => d.hasAlert).length);
 	const offline = $derived(filteredDevices?.filter((d: Device) => d.status === 'offline').length);
+	const statusCounts = $derived.by(() => {
+		const counts: Record<DeviceStatus, number> = {
+			online: 0,
+			offline: 0,
+			loading: 0,
+			alert: 0
+		};
+
+		for (const device of filteredDevices ?? []) {
+			counts[device.status] = (counts[device.status] ?? 0) + 1;
+		}
+
+		return counts;
+	});
+
+	const facilityBreakdown = $derived.by(() => {
+		const counts: Record<string, { name: string; count: number }> = {};
+
+		for (const device of filteredDevices ?? []) {
+			const key = device.facilityId ?? 'unknown';
+			const facility = getFacility(device.facilityId);
+			const existing = counts[key];
+			if (existing) {
+				existing.count += 1;
+			} else {
+				counts[key] = { name: facility?.name ?? 'Unknown facility', count: 1 };
+			}
+		}
+
+		return Object.values(counts).sort((a, b) => b.count - a.count);
+	});
+
+	const temperatureStats = $derived.by(() => {
+		const temps = (filteredDevices ?? [])
+			.map((d: Device) => d.temperatureC)
+			.filter((t): t is number => typeof t === 'number' && !Number.isNaN(t));
+
+		if (!temps.length) return null;
+
+		const min = Math.min(...temps);
+		const max = Math.max(...temps);
+		const avg = temps.reduce((sum, t) => sum + t, 0) / temps.length;
+		return { min, max, avg };
+	});
+
+	const humidityStats = $derived.by(() => {
+		const values = (filteredDevices ?? [])
+			.map((d: Device) => d.humidity)
+			.filter((h): h is number => typeof h === 'number' && !Number.isNaN(h));
+
+		if (!values.length) return null;
+
+		const min = Math.min(...values);
+		const max = Math.max(...values);
+		const avg = values.reduce((sum, h) => sum + h, 0) / values.length;
+		return { min, max, avg };
+	});
 
 	const statusOptions = STATUS_TYPES?.map((s) => ({
 		value: s,
@@ -198,13 +258,13 @@
 						class="flex items-center gap-1 rounded-full bg-amber-500/10 px-3 py-1 text-amber-300 ring-1 ring-amber-500/30"
 					>
 						<span class="h-2 w-2 rounded-full bg-amber-400"></span>
-						<span>Has alert</span>
+						<span>Alert</span>
 					</div>
 				</div>
 			</div>
 
 			<div
-				class="flex items-center justify-between gap-3 border-t border-slate-800 px-6 py-3 text-xs"
+				class="flex flex-row items-center justify-between gap-3 border-t border-slate-800 px-6 py-3 text-xs"
 			>
 				<div class="flex flex-wrap items-center gap-3 text-slate-400">
 					<span class="flex items-center gap-1">
@@ -220,12 +280,23 @@
 						<span>offline</span>
 					</span>
 				</div>
+				<span class="flex flex-1">End of top toolbar</span>
+				<div id="Dashboard__Overview__actions" class="flex items-center gap-3">
+					<button>
+						<img src={DASHBOARD_ICON} alt="Dashboard Icon" />
+					</button>
+					<button>
+						<img src={CHART_ICON} alt="Chart Icon" />
+					</button>
+				</div>
 			</div>
 		</header>
 
 		<!-- Device table -->
 		<section class="flex-1 min-h-0 overflow-hidden">
 			<div class="flex h-full min-h-0 flex-col overflow-hidden px-6 pb-6 pt-2">
+
+				<!-- Device Table -->
 				<div
 					class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#21213c]"
 				>
@@ -241,7 +312,107 @@
 					/>
 				</div>
 
-				<!-- CWTable now supports pagination and virtual scrolling for large result sets -->
+				<section class="mt-4 grid gap-4 lg:grid-cols-3 sm:grid-cols-2">
+					<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
+						<div class="flex items-center justify-between text-xs text-slate-400">
+							<span>Status mix</span>
+							<span class="text-slate-200">Total {total}</span>
+						</div>
+						<div class="mt-3 flex h-10 overflow-hidden rounded-lg ring-1 ring-slate-800/80">
+							{#if total}
+								{#each STATUS_TYPES as status (status)}
+									{#if statusCounts[status]}
+										<div
+											class={`h-full ${statusConfig[status].dotClass} opacity-80`}
+											style={`width: ${(statusCounts[status] / total) * 100}%`}
+										></div>
+									{/if}
+								{/each}
+							{:else}
+								<div class="flex-1 bg-slate-800/60"></div>
+							{/if}
+						</div>
+						<div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-300">
+							{#each STATUS_TYPES as status (status)}
+								<div class="flex items-center gap-1">
+									<span class={`h-2 w-2 rounded-full ${statusConfig[status].dotClass}`}></span>
+									<span class="font-mono text-slate-100">{statusCounts[status] ?? 0}</span>
+									<span>{statusConfig[status].label}</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+
+					<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
+						<div class="flex items-center justify-between text-xs text-slate-400">
+							<span>Top facilities</span>
+							<span class="text-slate-200">In view</span>
+						</div>
+						<div class="mt-3 space-y-2 text-xs text-slate-200">
+							{#if facilityBreakdown.length === 0}
+								<p class="text-slate-500">No devices available.</p>
+							{:else}
+								{#each facilityBreakdown.slice(0, 4) as facility, index (`${facility.name}-${index}`)}
+									<div class="flex flex-col gap-1">
+										<div class="flex items-center justify-between">
+											<span class="truncate">{facility.name}</span>
+											<span class="font-mono text-slate-100">{facility.count}</span>
+										</div>
+										<div class="h-2 overflow-hidden rounded bg-slate-800/70">
+											<div
+												class="h-full rounded bg-gradient-to-r from-emerald-400 to-cyan-500"
+												style={`width: ${
+													(facility.count /
+														Math.max(
+															1,
+															facilityBreakdown[0]?.count ?? facility.count
+														)) *
+													100
+												}%`}
+											></div>
+										</div>
+									</div>
+								{/each}
+							{/if}
+						</div>
+					</div>
+
+					<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
+						<div class="flex items-center justify-between text-xs text-slate-400">
+							<span>Environment snapshot</span>
+							<span class="text-slate-200">°C / %RH</span>
+						</div>
+						<div class="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-200">
+							<div class="rounded-lg border border-slate-800/60 bg-slate-900/70 p-3">
+								<p class="text-slate-400">Temperature</p>
+								{#if temperatureStats}
+									<p class="text-lg font-semibold text-slate-50">
+										{temperatureStats.avg.toFixed(1)}°C
+									</p>
+									<p class="text-[11px] text-slate-400">
+										Min {temperatureStats.min.toFixed(1)}° • Max {temperatureStats.max.toFixed(1)}°
+									</p>
+								{:else}
+									<p class="text-slate-500">No readings</p>
+								{/if}
+							</div>
+							<div class="rounded-lg border border-slate-800/60 bg-slate-900/70 p-3">
+								<p class="text-slate-400">Humidity</p>
+								{#if humidityStats}
+									<p class="text-lg font-semibold text-slate-50">
+										{humidityStats.avg.toFixed(1)}%
+									</p>
+									<p class="text-[11px] text-slate-400">
+										Min {humidityStats.min.toFixed(1)}% • Max {humidityStats.max.toFixed(1)}%
+									</p>
+								{:else}
+									<p class="text-slate-500">No readings</p>
+								{/if}
+							</div>
+						</div>
+					</div>
+				</section>
+
 			</div>
 		</section>
 	</main>

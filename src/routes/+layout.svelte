@@ -10,7 +10,7 @@
 	import { setContext } from 'svelte';
 	import type { LayoutProps } from './$types';
 
-	let { data, children } = $props<LayoutProps>();
+	let { data, supabase, children } = $props<LayoutProps>();
 	let appState = createAppState({
 		facilities: data.facilities,
 		locations: data.locations,
@@ -33,6 +33,12 @@
 			? appState.locations
 			: appState.locations.filter((l: Location) => l.facilityId === selectedFacilityId)
 	);
+
+	const logout = async () => {
+		const { error } = await supabase.auth.signOut();
+		if (error) console.error(error);
+		// Optionally, after sign-out you can redirect or let the UI update automatically.
+	};
 
 	const total = $derived(appState.devices.length);
 	const alerts = $derived(appState.devices.filter((d: Device) => d.hasAlert).length);
