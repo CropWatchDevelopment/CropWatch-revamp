@@ -24,6 +24,7 @@
 		value?: string;
 		secondaryKey?: string;
 		type?: 'text' | 'number' | 'datetime' | 'stacked' | 'badge' | 'buttons';
+		href?: string | ((row: unknown) => string | undefined);
 		suffix?: string;
 		align?: 'left' | 'center' | 'right';
 		sortable?: boolean;
@@ -176,6 +177,16 @@
 		const record = item as Record<string, unknown>;
 		if (col.value) return record[col.value];
 		return record[col.key];
+	};
+
+	const resolveHref = (item: unknown, col: ColumnConfig) => {
+		if (!col.href || col.type === 'buttons') return undefined;
+		try {
+			return typeof col.href === 'function' ? col.href(item) ?? undefined : col.href;
+		} catch (error) {
+			// Avoid breaking SSR if the resolver relies on browser-only globals.
+			return undefined;
+		}
 	};
 
 	const applyColumnFilters = (list: unknown[]) => {
@@ -674,13 +685,118 @@
 							{/each}
 						{:else}
 							{#each visibleRows as item, idx (getRowId(item, startIndex + idx))}
-								<tr class="border-t border-slate-900/80 even:bg-slate-900/50 hover:bg-blue-800/70" style={`height:${rowHeight}px`}>
+								<tr class="border-t border-slate-900/80 even:bg-slate-800/40 hover:bg-blue-800/70" style={`height:${rowHeight}px`}>
 									{#if columns.length}
 										{#each columns as col (col.key)}
 											<td
 												class={`px-2 md:px-3 py-2 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
 												style={col.width ?? ''}
 												data-label={col.label}
+											>
+												<svelte:element
+													this={col.href && col.type !== 'buttons' ? 'a' : 'div'}
+													href={col.href && col.type !== 'buttons'
+														? resolveHref(item, col) ?? undefined
+														: undefined}
+													class={`block ${col.href && col.type !== 'buttons' ? 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 hover:underline decoration-sky-400/70 decoration-1' : ''}`}
+												>
+													{#if col.type === 'badge' && col.badges}
+														{@const raw = getColumnValue(item, col)}
+														{@const badge = col.badges[String(raw)]}
+														{#if badge}
+															<div class="flex items-center gap-2">
+																{#if badge.dotClass}
+																	<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
+																{/if}
+																<span
+																	class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}
+																>
+																	{badge.label ?? String(raw)}
+																</span>
+															</div>
+														{:else}
+															<span>{String(raw ?? '')}</span>
+														{/if}
+													{:else if col.type === 'stacked'}
+														{@const primary = getColumnValue(item, col)}
+														{@const secondary = (item as Record<string, unknown>)[
+															col.secondaryKey ?? ''
+														]}
+														<div class="flex flex-col text-left">
+															<span class="text-slate-50">{primary}</span>
+															{#if secondary}
+																<span class="text-[11px] text-slate-500">{secondary}</span>
+															{/if}
+														</div>
+													{:else if col.type === 'datetime'}
+														{@const raw = getColumnValue(item, col)}
+														<span class="font-mono text-[11px] text-slate-400">
+															{raw ? new Date(raw as string).toLocaleString() : ''}
+														</span>
+													{:else}
+														{@const raw = getColumnValue(item, col)}
+														{#if col.type === 'number'}
+															<span class="font-mono text-[13px] text-slate-50">
+																{Number(raw).toLocaleString()}{col.suffix ?? ''}
+															</span>
+														{:else if col.type === 'buttons' && col.buttons?.length}
+															<div class="flex flex-wrap items-center justify-end gap-2">
+																{#each col.buttons as btn, bIdx (bIdx)}
+																	<button
+																		class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
+																		type="button"
+																		onclick={() => btn.onClick?.(item)}
+																	>
+																		{btn.label}
+																	</button>
+																{/each}
+															</div>
+														{:else}
+															<span class="text-slate-50">
+																{raw}{col.suffix ?? ''}
+															</span>
+														{/if}
+													{/if}
+												</svelte:element>
+											</td>
+										{/each}
+										{#if actions}
+											<td class="whitespace-nowrap px-2 md:px-3 py-2 align-middle text-right" data-label="Actions">
+												{@render actions(item, startIndex + idx, tableContext)}
+											</td>
+										{/if}
+									{:else}
+										<td class="px-2 md:px-3 py-2 text-slate-200">
+											<pre class="text-xs text-slate-400">{JSON.stringify(item, null, 2)}</pre>
+										</td>
+									{/if}
+								</tr>
+							{/each}
+						{/if}
+
+						{#if bottomSpacer > 0}
+							<tr class="spacer-row" aria-hidden="true" style={`height:${bottomSpacer}px`}></tr>
+						{/if}
+					{:else if row}
+						{#each paginated as item, idx (getRowId(item, (page - 1) * pageSize + idx))}
+							{@render row(item, (page - 1) * pageSize + idx, tableContext)}
+						{/each}
+					{:else}
+						{#each paginated as item, idx (getRowId(item, (page - 1) * pageSize + idx))}
+							<tr class="border-t border-slate-900/80 odd:bg-slate-700/40 even:bg-slate-800/50 hover:bg-blue-800/70">
+								{#if columns.length}
+									{#each columns as col (col.key)}
+										<td
+											class={`px-2 md:px-3 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
+											style={col.width ?? ''}
+											data-label={col.label}
+										>
+											<svelte:element
+												this={col.href && col.type !== 'buttons' ? 'a' : 'div'}
+												href={col.href && col.type !== 'buttons'
+													? resolveHref(item, col) ?? undefined
+													: undefined}
+												class={`block ${col.href && col.type !== 'buttons' ? 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 hover:underline decoration-sky-400/70 decoration-1' : ''}`}
 											>
 												{#if col.type === 'badge' && col.badges}
 													{@const raw = getColumnValue(item, col)}
@@ -722,96 +838,6 @@
 															{Number(raw).toLocaleString()}{col.suffix ?? ''}
 														</span>
 													{:else if col.type === 'buttons' && col.buttons?.length}
-														<div class="flex flex-wrap items-center justify-end gap-2">
-															{#each col.buttons as btn, bIdx (bIdx)}
-																<button
-																	class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
-																	type="button"
-																	onclick={() => btn.onClick?.(item)}
-																>
-																	{btn.label}
-																</button>
-															{/each}
-														</div>
-													{:else}
-														<span class="text-slate-50">
-															{raw}{col.suffix ?? ''}
-														</span>
-													{/if}
-												{/if}
-											</td>
-										{/each}
-										{#if actions}
-											<td class="whitespace-nowrap px-2 md:px-3 py-2 align-middle text-right" data-label="Actions">
-												{@render actions(item, startIndex + idx, tableContext)}
-											</td>
-										{/if}
-									{:else}
-										<td class="px-2 md:px-3 py-2 text-slate-200">
-											<pre class="text-xs text-slate-400">{JSON.stringify(item, null, 2)}</pre>
-										</td>
-									{/if}
-								</tr>
-							{/each}
-						{/if}
-
-						{#if bottomSpacer > 0}
-							<tr class="spacer-row" aria-hidden="true" style={`height:${bottomSpacer}px`}></tr>
-						{/if}
-					{:else if row}
-						{#each paginated as item, idx (getRowId(item, (page - 1) * pageSize + idx))}
-							{@render row(item, (page - 1) * pageSize + idx, tableContext)}
-						{/each}
-					{:else}
-						{#each paginated as item, idx (getRowId(item, (page - 1) * pageSize + idx))}
-							<tr class="border-t border-slate-900/80 even:bg-slate-900/50 hover:bg-blue-800/70">
-								{#if columns.length}
-									{#each columns as col (col.key)}
-										<td
-											class={`px-2 md:px-3 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
-											style={col.width ?? ''}
-											data-label={col.label}
-										>
-											{#if col.type === 'badge' && col.badges}
-												{@const raw = getColumnValue(item, col)}
-												{@const badge = col.badges[String(raw)]}
-												{#if badge}
-													<div class="flex items-center gap-2">
-														{#if badge.dotClass}
-															<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
-														{/if}
-														<span
-															class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}
-														>
-															{badge.label ?? String(raw)}
-														</span>
-													</div>
-												{:else}
-													<span>{String(raw ?? '')}</span>
-												{/if}
-											{:else if col.type === 'stacked'}
-												{@const primary = getColumnValue(item, col)}
-												{@const secondary = (item as Record<string, unknown>)[
-													col.secondaryKey ?? ''
-												]}
-												<div class="flex flex-col text-left">
-													<span class="text-slate-50">{primary}</span>
-													{#if secondary}
-														<span class="text-[11px] text-slate-500">{secondary}</span>
-													{/if}
-												</div>
-											{:else if col.type === 'datetime'}
-												{@const raw = getColumnValue(item, col)}
-												<span class="font-mono text-[11px] text-slate-400">
-													{raw ? new Date(raw as string).toLocaleString() : ''}
-												</span>
-											{:else}
-													{@const raw = getColumnValue(item, col)}
-													{#if col.type === 'number'}
-														<span class="font-mono text-[13px] text-slate-50">
-															{Number(raw).toLocaleString()}{col.suffix ?? ''}
-														</span>
-													{:else if col.type === 'buttons' && col.buttons?.length}
 														<div class="flex flex-wrap items-center gap-2">
 															{#each col.buttons as btn, bIdx (bIdx)}
 																<CWButton
@@ -829,6 +855,7 @@
 														</span>
 													{/if}
 												{/if}
+											</svelte:element>
 										</td>
 									{/each}
 									{#if actions}

@@ -191,7 +191,9 @@
 			label: 'Facility / Location',
 			type: 'stacked',
 			secondaryKey: 'locationName',
-			sortable: true
+			sortable: true,
+			href: (item: Device) =>
+				`/locations/location/${item.locationId}?prev=${window.location.pathname}`
 		},
 		{
 			key: 'Actions',
@@ -316,7 +318,7 @@
 			<div class="flex h-full min-h-0 flex-col overflow-hidden px-6 pb-6 pt-2">
 				<!-- Device Table -->
 				<div
-					class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#21213c] mb-2"
+					class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900 mb-2"
 				>
 					<CWTable
 						items={tableRows}

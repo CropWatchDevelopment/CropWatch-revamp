@@ -313,7 +313,7 @@ if (data.initialHistory?.length) {
 	</div>
 
 	<header
-		class="rounded-3xl border border-slate-800 bg-[#21213c] p-6 shadow-lg shadow-slate-950/40"
+		class="rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-slate-950/40"
 	>
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<div>
@@ -335,7 +335,7 @@ if (data.initialHistory?.length) {
 	<section class="grid gap-4 lg:grid-cols-2">
 		{#each metricCards as card (card.key)}
 			<div
-				class="rounded-3xl border border-slate-800 bg-[#21213c] p-6 shadow-lg shadow-slate-950/50"
+				class="rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-slate-950/50"
 			>
 				<div class="flex flex-wrap items-start justify-between gap-4">
 					<div>
@@ -452,7 +452,7 @@ if (data.initialHistory?.length) {
 	/>
 
 	<section
-		class="rounded-3xl border border-slate-800 bg-[#21213c] p-6 shadow-lg shadow-slate-950/40"
+		class="rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-slate-950/40"
 	>
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<div>

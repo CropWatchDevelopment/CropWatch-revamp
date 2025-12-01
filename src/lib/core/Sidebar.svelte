@@ -5,6 +5,9 @@
 	import type { Location } from '$lib/Interfaces/location.interface';
 	import LOCATION_ICON from '$lib/images/icons/location.svg';
 	import GLOBE_LOCATION_PIN_ICON from '$lib/images/icons/globe_location_pin.svg';
+	import MORE_VERT_ICON from '$lib/images/icons/more_vert.svg';
+	import EYE_ICON from '$lib/images/icons/eye.svg';
+	import { goto } from '$app/navigation';
 
 	let {
 		facilities,
@@ -108,16 +111,20 @@
 	>
 		<!-- Header with close button (only in drawer mode when open) -->
 		<div class="flex items-center justify-between gap-2">
-			<span class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-				Navigation
-			</span>
+			<span class="text-xs font-semibold uppercase tracking-wide text-slate-400"> Navigation </span>
 			{#if useDrawer && isDrawerOpen}
 				<button
 					onclick={closeDrawer}
 					class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 text-slate-200 transition hover:bg-slate-800"
 					aria-label="Close sidebar"
 				>
-					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<svg
+						class="h-4 w-4"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="2"
+					>
 						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 					</svg>
 				</button>
@@ -126,12 +133,22 @@
 
 		<!-- Search -->
 		<div>
-			<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-				Global search
-			</h2>
-			<div class="mt-2 flex items-center gap-2 rounded-xl bg-slate-800/50 px-3 py-2 ring-1 ring-slate-700/70">
-				<svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+			<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Global search</h2>
+			<div
+				class="mt-2 flex items-center gap-2 rounded-xl bg-slate-800/50 px-3 py-2 ring-1 ring-slate-700/70"
+			>
+				<svg
+					class="h-4 w-4 text-slate-400"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+					/>
 				</svg>
 				<input
 					bind:value={search}
@@ -145,9 +162,7 @@
 		<div class="flex flex-1 min-h-0 flex-col gap-3">
 			<!-- Facilities -->
 			<div class="flex flex-1 min-h-0 flex-col">
-				<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-					Facilities
-				</h2>
+				<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Facilities</h2>
 				<div class="mt-2 flex-1 space-y-1 overflow-y-auto pr-1 text-sm">
 					<button
 						onclick={() => {
@@ -159,7 +174,9 @@
 						}`}
 					>
 						<span class="flex items-center gap-2">
-							<span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-slate-800 text-[10px] text-slate-300 ring-1 ring-slate-700/60">
+							<span
+								class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-slate-800 text-[10px] text-slate-300 ring-1 ring-slate-700/60"
+							>
 								all
 							</span>
 							<span>All facilities</span>
@@ -180,7 +197,9 @@
 							}`}
 						>
 							<span class="flex items-center gap-2">
-								<span class="inline-flex h-5 w-8 items-center justify-center rounded-md bg-slate-900 text-[10px] font-semibold tracking-tight text-slate-200 ring-1 ring-slate-700/70">
+								<span
+									class="inline-flex h-5 w-8 items-center justify-center rounded-md bg-slate-900 text-[10px] font-semibold tracking-tight text-slate-200 ring-1 ring-slate-700/70"
+								>
 									{f.code}
 								</span>
 								<span class="truncate" title={f.name}>{f.name}</span>
@@ -198,23 +217,32 @@
 
 			<!-- Locations -->
 			<div class="flex flex-1 min-h-0 flex-col border-t border-slate-800 pt-3">
-				<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-					Locations
-				</h2>
+				<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Locations</h2>
 				<div class="mt-2 flex-1 space-y-1 overflow-y-auto pr-1 text-sm">
-					<button
-						onclick={() => (selectedLocationId = 'all')}
-						class={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition hover:bg-slate-800/70 ${
-							selectedLocationId === 'all' ? 'bg-slate-800' : ''
-						}`}
-					>
-						<span>
-							<img src={GLOBE_LOCATION_PIN_ICON} alt="Globe location pin icon" class="inline-block h-4 w-4 mr-1" />
-							All locations
-						</span>
-						<span class="text-xs text-slate-500">{devices?.length}</span>
-					</button>
-
+					<span class="flex flex-row items-center group">
+						<button
+							onclick={() => (selectedLocationId = 'all')}
+							class={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition hover:bg-slate-800/70 ${
+								selectedLocationId === 'all' ? 'bg-slate-800' : ''
+							}`}
+						>
+							<span>
+								<img
+									src={GLOBE_LOCATION_PIN_ICON}
+									alt="Globe location pin icon"
+									class="inline-block h-4 w-4 mr-1"
+								/>
+								All locations
+							</span>
+							<span class="text-xs text-slate-500">{devices?.length}</span>
+						</button>
+						<button
+							class="hidden group-hover:flex px-1 text-slate-400 hover:text-slate-200"
+							onclick={() => goto(`/locations/location/${loc.id}`)}
+						>
+							<img src={EYE_ICON} alt="More options icon" class="h-4 w-4" />
+						</button>
+					</span>
 					{#each locationsForFacility as loc (loc.id)}
 						{@const locDevices = devices.filter((d: Device) => d.locationId === loc.id)}
 						{@const hasAlert = locDevices.some((d: Device) => d.hasAlert)}
@@ -236,7 +264,12 @@
 									<span>{locDevices.length}</span>
 								</span>
 							</button>
-							<button class="hidden group-hover:flex px-1 text-slate-400 hover:text-slate-200">⋮</button>
+							<button
+								class="hidden group-hover:flex px-1 text-slate-400 hover:text-slate-200"
+								onclick={() => goto(`/locations/location/${loc.id}`)}
+							>
+								<img src={MORE_VERT_ICON} alt="More options icon" class="h-4 w-4" />
+							</button>
 						</span>
 					{/each}
 				</div>

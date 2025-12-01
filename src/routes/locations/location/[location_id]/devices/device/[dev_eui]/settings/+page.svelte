@@ -138,7 +138,7 @@
 		<!-- Left Column - Settings Forms -->
 		<div class="flex flex-col gap-6 lg:col-span-2">
 			<!-- General Settings -->
-			<section class="rounded-2xl border border-slate-800 bg-[#21213c] p-6 shadow-lg">
+			<section class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
 				<h2 class="text-lg font-semibold text-white">General Settings</h2>
 				<p class="mt-1 text-sm text-slate-400">Update device name and location assignment</p>
 
@@ -184,7 +184,7 @@
 			</section>
 
 			<!-- User Permissions -->
-			<section class="rounded-2xl border border-slate-800 bg-[#21213c] p-6 shadow-lg">
+			<section class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
 				<div class="flex items-center justify-between">
 					<div>
 						<h2 class="text-lg font-semibold text-white">User Permissions</h2>
@@ -253,7 +253,7 @@
 			</section>
 
 			<!-- Reports -->
-			<section class="rounded-2xl border border-slate-800 bg-[#21213c] p-6 shadow-lg">
+			<section class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
 				<h2 class="text-lg font-semibold text-white">Reports</h2>
 				<p class="mt-1 text-sm text-slate-400">Generate and download device reports</p>
 
@@ -392,7 +392,7 @@
 		<!-- Right Column - Device Info -->
 		<div class="flex flex-col gap-6">
 			<!-- Device Information -->
-			<section class="rounded-2xl border border-slate-800 bg-[#21213c] p-6 shadow-lg">
+			<section class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
 				<h2 class="text-lg font-semibold text-white">Device Information</h2>
 
 				<div class="mt-6 space-y-4">
@@ -420,7 +420,7 @@
 			</section>
 
 			<!-- Warranty & Maintenance -->
-			<section class="rounded-2xl border border-slate-800 bg-[#21213c] p-6 shadow-lg">
+			<section class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
 				<h2 class="text-lg font-semibold text-white">Warranty & Maintenance</h2>
 
 				<div class="mt-6 space-y-4">
@@ -501,7 +501,7 @@
 			</section>
 
 			<!-- Order Parts -->
-			<section class="rounded-2xl border border-slate-800 bg-[#21213c] p-6 shadow-lg">
+			<section class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
 				<h2 class="text-lg font-semibold text-white">Order Parts</h2>
 				<p class="mt-1 text-sm text-slate-400">Need replacement parts or accessories?</p>
 

@@ -96,7 +96,7 @@
 	});
 </script>
 
-<section class="rounded-3xl border border-slate-800 bg-[#21213c] p-6 shadow-lg shadow-slate-950/40">
+<section class="rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-slate-950/40">
 	<div class="flex flex-wrap items-center justify-between gap-4">
 		<div>
 			<p class="text-xs uppercase tracking-[0.15em] text-slate-500">{title}</p>

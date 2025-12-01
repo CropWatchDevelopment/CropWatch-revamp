@@ -10,9 +10,10 @@
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import { getContext } from 'svelte';
 	import { getToastContext } from '$lib/components/toast';
-    const toast = getToastContext();
 
-	const getAppState = getContext<AppState>('appState');
+	const toast = getToastContext();
+
+	const getAppState = getContext<() => AppState>('appState');
 	let appState = $derived(getAppState());
 
 	let { isLoggedIn } = $props<{
@@ -49,51 +50,186 @@
 	let loggingOutLoading: boolean = $state<boolean>(false);
 </script>
 
-<header
-	class="flex items-center justify-between border-b border-slate-800 bg-slate-900/70 px-4 py-2"
->
-	<div class="flex items-center gap-3">
-		<button
-			type="button"
-			onclick={toggleSidebar}
-			class="inline-flex h-14 w-14 items-center justify-center rounded-full border border-slate-700 text-slate-100 transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 md:hidden"
-			aria-label="Toggle sidebar"
-		>
-			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
-				<path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
-			</svg>
-		</button>
-		<div class="corner">
-			<a href="/">
-				<img src={logo} alt="CropWatch" />
-				<p class="text-slate-100 text-xl ml-2">𝘾𝙧𝙤𝙥𝙒𝙖𝙩𝙘𝙝</p>
+<header class="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
+	<div class="flex items-center justify-between px-6 py-3">
+		<!-- Left: Mobile toggle + Logo -->
+		<div class="flex items-center gap-4">
+			<button
+				type="button"
+				onclick={toggleSidebar}
+				class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/50 text-slate-300 transition hover:border-sky-500/50 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 md:hidden"
+				aria-label="Toggle sidebar"
+			>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+					<path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
+				</svg>
+			</button>
+
+			<a href="/" class="flex items-center gap-3 transition hover:opacity-80">
+				<img src={logo} alt="CropWatch" class="h-8 w-8" />
+				<span class="hidden text-lg font-semibold tracking-tight text-white sm:inline"
+					>CropWatch</span
+				>
 			</a>
 		</div>
+
+		<!-- Center: Navigation -->
+		<nav class="hidden md:flex">
+			<ul class="flex items-center gap-1">
+				<li>
+					<a
+						href={resolve('/')}
+						class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all {page
+							.url.pathname === '/'
+							? 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/30'
+							: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+					>
+						<svg
+							class="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+							/>
+						</svg>
+						Home
+					</a>
+				</li>
+				<li>
+					<a
+						href={resolve('/locations')}
+						class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all {page.url.pathname.startsWith(
+							'/locations'
+						)
+							? 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/30'
+							: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+					>
+						<svg
+							class="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+							/>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+							/>
+						</svg>
+						Locations
+					</a>
+				</li>
+				<li>
+					<a
+						href="/rules"
+						class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all {page.url.pathname.startsWith(
+							'/rules'
+						)
+							? 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/30'
+							: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+					>
+						<svg
+							class="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+							/>
+						</svg>
+						Rules
+					</a>
+				</li>
+				<li>
+					<a
+						href="/reports"
+						class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all {page.url.pathname.startsWith(
+							'/reports'
+						)
+							? 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/30'
+							: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+					>
+						<svg
+							class="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+							/>
+						</svg>
+						Reports
+					</a>
+				</li>
+				<li>
+					<a
+						href="/gateways"
+						class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all {page.url.pathname.startsWith(
+							'/gateways'
+						)
+							? 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/30'
+							: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+					>
+						<svg
+							class="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M16 3h-1a2 2 0 00-2 2v1H9V5a2 2 0 00-2-2H6a2 2 0 00-2 2v1h16V5a2 2 0 00-2-2z"
+							/>
+						</svg>
+						Gateways
+					</a>
+				</li>
+			</ul>
+		</nav>
+
+		<!-- Right: Actions -->
+		{#if isLoggedIn}
+			<div class="flex items-center">
+				<CWButton variant="secondary" size="sm" onclick={() => (logoutDialog = true)}>
+					<svg
+						class="h-4 w-4"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+						/>
+					</svg>
+					<span class="hidden sm:inline">Log Out</span>
+				</CWButton>
+			</div>
+		{/if}
 	</div>
-
-	<!-- <nav class="hidden md:flex">
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
-		</svg>
-		<ul>
-			<li aria-current={page.url.pathname === '/' ? 'page' : undefined}>
-				<a href={resolve('/')}>Home</a>
-			</li>
-			<li aria-current={page.url.pathname.startsWith('/locations') ? 'page' : undefined}>
-				<a href={resolve('/locations')}>Locations</a>
-			</li>
-		</ul>
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
-		</svg>
-	</nav> -->
-
-	{#if isLoggedIn}
-		<CWButton variant="secondary" onclick={() => (logoutDialog = true)}>
-			<img src={LOCK_ICON} alt="Log out of account" class="h-4 w-4" />
-			Log Out
-		</CWButton>
-	{/if}
 </header>
 
 <CWDialog
@@ -120,94 +256,3 @@
 		</CWButton>
 	</div>
 </CWDialog>
-
-<style>
-	header {
-		display: flex;
-		justify-content: space-between;
-	}
-
-	.corner {
-		width: 3em;
-		height: 3em;
-	}
-
-	.corner a {
-		display: flex;
-		align-items: center;
-		width: 100%;
-		height: 100%;
-		text-decoration: none;
-	}
-
-	.corner img {
-		width: 2.5em;
-		height: 2.5em;
-		margin-right: 0.5em;
-		object-fit: contain;
-	}
-
-	nav {
-		display: flex;
-		justify-content: center;
-		--background: rgba(52, 88, 250, 0.7);
-	}
-
-	svg {
-		width: 2em;
-		height: 3em;
-		display: block;
-	}
-
-	path {
-		fill: var(--background);
-	}
-
-	ul {
-		position: relative;
-		padding: 0;
-		margin: 0;
-		height: 3em;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		list-style: none;
-		background: var(--background);
-		background-size: contain;
-	}
-
-	li {
-		position: relative;
-		height: 100%;
-	}
-
-	li[aria-current='page']::before {
-		--size: 6px;
-		content: '';
-		width: 0;
-		height: 0;
-		position: absolute;
-		top: 0;
-		left: calc(50% - var(--size));
-		border: var(--size) solid transparent;
-		border-top: var(--size) solid var(--color-theme-1);
-	}
-
-	nav a {
-		display: flex;
-		height: 100%;
-		align-items: center;
-		padding: 0 0.5rem;
-		color: var(--color-text);
-		font-weight: 700;
-		font-size: 0.8rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		text-decoration: none;
-		transition: color 0.2s linear;
-	}
-
-	a:hover {
-		color: var(--color-theme-1);
-	}
-</style>
