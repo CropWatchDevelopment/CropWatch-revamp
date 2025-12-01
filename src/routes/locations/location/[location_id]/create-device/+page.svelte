@@ -198,7 +198,7 @@
 		}
 	}
 </script>
-<pre>{JSON.stringify({ devEui, deviceType, selectedTtiApplicationId, ttiVerificationState, ttiVerificationError, ttiDeviceInfo, lastVerifiedDevEui }, null, 2)}</pre>
+
 <div class="p-6">
 	<div class="mx-auto max-w-2xl space-y-6">
 		<!-- Header -->

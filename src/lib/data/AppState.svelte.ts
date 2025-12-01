@@ -13,6 +13,7 @@ export function createAppState(initial: AppState) {
 		facilities: initial.facilities ?? [],
 		locations: initial.locations ?? [],
 		devices: initial.devices ?? [],
+		alerts: initial.alerts ?? [],
 		isLoggedIn: initial.isLoggedIn ?? false
 	});
 

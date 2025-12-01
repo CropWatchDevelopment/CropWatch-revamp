@@ -17,6 +17,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 			facilities: [],
 			locations: [],
 			devices: [],
+			alerts: [],
 			isLoggedIn: !!session,
 			nextCursor: null
 		};

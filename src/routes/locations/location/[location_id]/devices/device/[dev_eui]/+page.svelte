@@ -9,6 +9,7 @@
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import type { PageData } from './$types';
 	import CWButton from '$lib/components/CWButton.svelte';
+	import CWTable from '$lib/components/CWTable.svelte';
 	import { goto } from '$app/navigation';
 	import BACK_ICON from '$lib/images/icons/back.svg';
 	import SETTINGS_ICON from '$lib/images/icons/settings.svg';
@@ -22,20 +23,20 @@
 		appState.devices.find((d: Device) => d.id === page.params.dev_eui)
 	);
 
-let history: DeviceDataHistory[] = $state([]);
+	let history: DeviceDataHistory[] = $state([]);
 	let historyLoading = $state(true);
 	let historyError: string | null = $state(null);
 
-if (data.initialHistory?.length) {
-	history = data.initialHistory.map((p) => ({
-		timestamp: p.timestamp || new Date().toISOString(),
-		temperature: p.primary ?? 0,
-		humidity: p.secondary ?? 0,
-		co2: p.co2 ?? null,
-		alert: false
-	}));
-	historyLoading = false;
-}
+	if (data.initialHistory?.length) {
+		history = data.initialHistory.map((p) => ({
+			timestamp: p.timestamp || new Date().toISOString(),
+			temperature: p.primary ?? 0,
+			humidity: p.secondary ?? 0,
+			co2: p.co2 ?? null,
+			alert: false
+		}));
+		historyLoading = false;
+	}
 
 	onMount(async () => {
 		if (history.length) return;
@@ -283,6 +284,62 @@ if (data.initialHistory?.length) {
 	function formatHour(timestamp: string) {
 		return formatter.format(new Date(timestamp));
 	}
+
+	const historyTableColumns = [
+		{
+			key: 'timestamp',
+			label: 'Timestamp (UTC)',
+			type: 'datetime' as const,
+			sortable: true
+		},
+		{
+			key: 'temperature',
+			label: 'Temperature',
+			type: 'number' as const,
+			suffix: '°C',
+			sortable: true
+		},
+		{
+			key: 'co2',
+			label: 'CO₂',
+			type: 'text' as const,
+			sortable: true
+		},
+		{
+			key: 'humidity',
+			label: 'Humidity',
+			type: 'number' as const,
+			suffix: '%',
+			sortable: true
+		},
+		{
+			key: 'alert',
+			label: 'Status',
+			type: 'badge' as const,
+			sortable: true,
+			badges: {
+				true: {
+					label: 'Alert',
+					dotClass: 'bg-amber-400',
+					badgeClass: 'bg-amber-400/20 text-amber-100'
+				},
+				false: {
+					label: 'Normal',
+					dotClass: 'bg-emerald-400',
+					badgeClass: 'bg-emerald-500/10 text-emerald-200'
+				}
+			}
+		}
+	];
+
+	const historyTableItems = $derived(
+		sortedHistory.map((entry) => ({
+			...entry,
+			co2: entry.co2 != null ? entry.co2 : '—',
+			alert: String(entry.alert)
+		}))
+	);
+
 </script>
 
 <div class="flex flex-col gap-8 p-6 text-slate-100">
@@ -320,7 +377,7 @@ if (data.initialHistory?.length) {
 				<p class="text-xs uppercase tracking-[0.2em] text-slate-500">Temperature sensor</p>
 				<h1 class="mt-1 text-3xl font-semibold text-white">Cold Chain TH-01</h1>
 				<p class="text-sm text-slate-400">
-					Device EUI • 
+					Device EUI •
 					<CWCopy value="70-B3-D5-43-0F-12" size="sm" />
 				</p>
 			</div>
@@ -454,66 +511,22 @@ if (data.initialHistory?.length) {
 	<section
 		class="rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-slate-950/40"
 	>
-		<div class="flex flex-wrap items-center justify-between gap-4">
+		<div class="flex flex-wrap items-center justify-between gap-4 mb-4">
 			<div>
 				<p class="text-xs uppercase tracking-[0.2em] text-slate-500">24h history</p>
 				<h2 class="text-xl font-semibold text-white">All telemetry points</h2>
 			</div>
-			<div class="text-sm text-slate-400">{sortedHistory.length} samples</div>
 		</div>
 
-		<div class="mt-4 overflow-hidden rounded-2xl border border-slate-800">
-			<table class="w-full text-sm">
-				<thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
-					<tr>
-						<th class="px-4 py-3 text-left">Timestamp (UTC)</th>
-						<th class="px-4 py-3 text-left">Temperature</th>
-						<th class="px-4 py-3 text-left">CO₂</th>
-						<th class="px-4 py-3 text-left">Humidity</th>
-						<th class="px-4 py-3 text-left">Alert</th>
-						<th class="px-4 py-3 text-left">Notes</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each sortedHistory as entry, index (entry.timestamp)}
-						{@const isAlert = entry.alert}
-						<tr
-							class={`${
-								isAlert
-									? 'bg-amber-500/10 text-amber-100'
-									: index % 2 === 0
-										? 'bg-slate-900/60'
-										: 'bg-slate-900/30'
-							} border-b border-slate-900/40`}
-						>
-							<td class="px-4 py-3 font-mono text-xs text-slate-200">
-								{formatHour(entry.timestamp)}
-							</td>
-							<td class="px-4 py-3 font-semibold text-white">{entry.temperature.toFixed(1)}°C</td>
-							<td class="px-4 py-3 text-slate-100">
-								{#if entry.co2 != null}
-									{entry.co2}
-								{:else}
-									—
-								{/if}
-							</td>
-							<td class="px-4 py-3 text-slate-100">{entry.humidity}%</td>
-							<td class="px-4 py-3">
-								<span
-									class={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${
-										isAlert
-											? 'bg-amber-400/20 text-amber-100'
-											: 'bg-emerald-500/10 text-emerald-200'
-									}`}
-								>
-									{isAlert ? 'Alert' : 'Normal'}
-								</span>
-							</td>
-							<td class="px-4 py-3 text-slate-200">{entry.note ?? '—'}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+		<div class="overflow-hidden rounded-2xl border border-slate-800">
+			<CWTable
+				items={historyTableItems}
+				columns={historyTableColumns}
+				pageSize={15}
+				sortKey="timestamp"
+				sortDir="desc"
+				getRowId={(item) => (item as { timestamp: string }).timestamp}
+			/>
 		</div>
 	</section>
 </div>

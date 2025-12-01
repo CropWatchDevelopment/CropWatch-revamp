@@ -8,14 +8,17 @@ import type { Location } from '$lib/Interfaces/location.interface';
 import type { AppStateState } from '$lib/data/AppState.svelte';
 import { goto } from '$app/navigation';
 import { redirect } from '@sveltejs/kit';
+import type { Alert } from '$lib/Interfaces/alert.interface';
 
 type DeviceRow = Database['public']['Tables']['cw_devices']['Row'];
 type LocationRow = Database['public']['Tables']['cw_locations']['Row'];
 type DeviceTypeRow = Database['public']['Tables']['cw_device_type']['Row'];
+type CwRuleRow = Database['public']['Tables']['cw_rules']['Row'];
 
 type DeviceJoined = DeviceRow & {
 	location?: LocationRow | null;
 	device_type?: DeviceTypeRow | null;
+	alerts?: CwRuleRow[] | null;
 };
 
 type AuthSession = { access_token: string; refresh_token: string };
@@ -99,6 +102,10 @@ function computeStatus(
 
 	const ageMs = Date.now() - lastSeenDate.getTime();
 	return ageMs > allowanceMs ? 'offline' : 'online';
+}
+
+function mapAlert(row: CwRuleRow): Alert {
+	return { ...row, devEui: row.dev_eui, createdAt: new Date(row.created_at) };
 }
 
 function mapDevice(row: DeviceJoined): Device {
@@ -285,7 +292,8 @@ export async function fetchDevicePage({
 				'installed_at',
 				'type',
 				'location:cw_locations(location_id,name,lat,long,owner_id)',
-				'device_type:cw_device_type(primary_data_v2,secondary_data_v2,primary_data_notation,secondary_data_notation,default_upload_interval)'
+				'device_type:cw_device_type(primary_data_v2,secondary_data_v2,primary_data_notation,secondary_data_notation,default_upload_interval)',
+				'alerts:cw_rules(*)'
 			].join(',')
 		)
 		.order('dev_eui', { ascending: true })
@@ -308,6 +316,8 @@ export async function fetchDevicePage({
 
 	const devices = pageItems.map((row) => mapDevice(row as DeviceJoined));
 
+	const alerts = pageItems.flatMap((row) => ((row as DeviceJoined).alerts ?? []).map(mapAlert));
+
 	const locationsMap = new Map<string, Location>();
 	const facilitiesMap = new Map<string, Facility>();
 
@@ -322,6 +332,7 @@ export async function fetchDevicePage({
 
 	return {
 		devices,
+		alerts,
 		locations: Array.from(locationsMap.values()),
 		facilities: Array.from(facilitiesMap.values()),
 		nextCursor
@@ -331,11 +342,11 @@ export async function fetchDevicePage({
 export async function loadInitialAppState(
 	session?: AuthSession
 ): Promise<AppState & { nextCursor: string | null }> {
-	const { devices, locations, facilities, nextCursor } = await fetchDevicePage({
+	const { devices, alerts, locations, facilities, nextCursor } = await fetchDevicePage({
 		limit: 100,
 		session
 	});
-	return { devices, locations, facilities, nextCursor, isLoggedIn: !!session };
+	return { devices, alerts, locations, facilities, nextCursor, isLoggedIn: !!session };
 }
 
 export type DeviceHistoryPoint = {
@@ -414,11 +425,11 @@ export async function fetchDeviceHistory({
 				co2Value && Number.isFinite(co2Value)
 					? co2Value
 					: (() => {
-							const foundKey = Object.keys(row).find((k) => k.toLowerCase().includes('co2'));
-							if (!foundKey) return null;
-							const val = Number(row[foundKey]);
-							return Number.isFinite(val) ? val : null;
-						})();
+						const foundKey = Object.keys(row).find((k) => k.toLowerCase().includes('co2'));
+						if (!foundKey) return null;
+						const val = Number(row[foundKey]);
+						return Number.isFinite(val) ? val : null;
+					})();
 
 			return {
 				timestamp:

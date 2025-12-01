@@ -20,6 +20,7 @@
 		facilities: data.facilities,
 		locations: data.locations,
 		devices: data.devices,
+		alerts: data.alerts,
 		isLoggedIn: data.isLoggedIn ?? false
 	});
 
@@ -27,6 +28,7 @@
 		appState.facilities = data.facilities;
 		appState.locations = data.locations;
 		appState.devices = data.devices;
+		appState.alerts = data.alerts;
 		appState.isLoggedIn = data.isLoggedIn ?? false;
 	});
 
@@ -48,7 +50,7 @@
 	);
 
 	const total = $derived(appState.devices.length);
-	const alerts = $derived(appState.devices.filter((d: Device) => d.hasAlert).length);
+	const alerts = $derived(appState.alerts.length);
 	const offline = $derived(appState.devices.filter((d: Device) => d.status === 'offline').length);
 </script>
 

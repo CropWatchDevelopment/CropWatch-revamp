@@ -16,6 +16,8 @@
 	import CWResizablePanel from '$lib/components/CWResizablePanel.svelte';
 	import { persisted } from '$lib/data/localStorage.svelte';
 	import CWDonutChart, { type DonutSegment } from '$lib/components/CWDonutChart.svelte';
+	import type { Alert } from '$lib/Interfaces/alert.interface';
+	import ACTIVE_ALERT_ICON from '$lib/images/icons/active_alert.svg';
 
 	const getAppState = useAppState();
 	let appState = $derived(getAppState());
@@ -72,6 +74,26 @@
 		return haystack.includes(q.toLowerCase());
 	};
 
+	const filteredAlerts = $derived.by(() => {
+		let list = appState.alerts;
+
+		if (selectedFacilityId !== 'all') {
+			list = list.filter((a: Alert) => {
+				const device = appState.devices.find((d: Device) => d.id === a.dev_eui);
+				return device?.facilityId === selectedFacilityId;
+			});
+		}
+
+		if (selectedLocationId !== 'all') {
+			list = list.filter((a: Alert) => {
+				const device = appState.devices.find((d: Device) => d.id === a.dev_eui);
+				return device?.locationId === selectedLocationId;
+			});
+		}
+
+		return list;
+	});
+
 	const filteredDevices = $derived.by(() => {
 		let list = appState.devices;
 
@@ -87,14 +109,14 @@
 	});
 
 	const total = $derived(filteredDevices?.length);
-	const alerts = $derived(filteredDevices?.filter((d: Device) => d.hasAlert).length);
+	const alerts = $derived(filteredAlerts?.length);
 	const offline = $derived(filteredDevices?.filter((d: Device) => d.status === 'offline').length);
 	const statusCounts = $derived.by(() => {
 		const counts: Record<DeviceStatus, number> = {
 			online: 0,
 			offline: 0,
 			loading: 0,
-			alert: 0
+			alert: 0,
 		};
 
 		for (const device of filteredDevices ?? []) {
@@ -106,10 +128,10 @@
 
 	// Reactive donut chart data based on actual device status counts
 	const statusData = $derived<DonutSegment[]>([
-		{ label: 'Online', value: statusCounts.online, color: '#10b981' },
-		{ label: 'Offline', value: statusCounts.offline, color: '#ef4444' },
-		{ label: 'Alert', value: statusCounts.alert, color: '#f59e0b' },
-		{ label: 'Loading', value: statusCounts.loading, color: '#64748b' }
+		{ label: 'Devices Online', value: statusCounts.online, color: '#10b981' },
+		{ label: 'Devices Offline', value: statusCounts.offline, color: '#ef4444' },
+		{ label: 'Active Alerts', value: filteredAlerts.filter((a) => a.is_triggered).length, color: '#f59e0b' },
+		{ label: 'Loading...', value: statusCounts.loading, color: '#64748b' }
 	]);
 
 	const facilityBreakdown = $derived.by(() => {
@@ -298,7 +320,7 @@
 						<span>offline</span>
 					</span>
 				</div>
-				<span class="flex flex-1">End of top toolbar</span>
+				<span class="flex flex-1"></span>
 				<div id="Dashboard__Overview__actions" class="flex items-center gap-3">
 					<CWPill value={3} color="error" pulse position="bottom-right">
 						<CWButton
@@ -349,17 +371,17 @@
 							<!-- <div
 								class="mt-4 flex h-28 items-center justify-center rounded-lg border border-slate-800/70 bg-slate-900/60"
 							> -->
-								<!-- <div class="text-center">
+							<!-- <div class="text-center">
 									<div class="text-3xl font-semibold text-slate-50">{total ?? 0}</div>
 									<div class="text-xs text-slate-400">devices tracked</div>
 								</div> -->
-								<CWDonutChart
-									data={statusData}
-									size={180}
-									thickness={0.4}
-									centerSubLabel="Devices"
-									legendPosition="right"
-								/>
+							<CWDonutChart
+								data={statusData}
+								size={180}
+								thickness={0.4}
+								centerSubLabel="Devices"
+								legendPosition="right"
+							/>
 							<!-- </div> -->
 							<!-- <div class="mt-3 flex h-10 overflow-hidden rounded-lg ring-1 ring-slate-800/80">
 								{#if total}
@@ -419,38 +441,25 @@
 
 						<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
 							<div class="flex items-center justify-between text-xs text-slate-400">
-								<span>Alert List</span>
+								<span>Active Alert List</span>
 								<span class="text-slate-200">Reported Time</span>
 							</div>
-							<div class="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-200">
-								<div class="rounded-lg border border-slate-800/60 bg-slate-900/70 p-3">
-									<p class="text-slate-400">Temperature</p>
-									{#if temperatureStats}
-										<p class="text-lg font-semibold text-slate-50">
-											{temperatureStats.avg.toFixed(1)}°C
-										</p>
-										<p class="text-[11px] text-slate-400">
-											Min {temperatureStats.min.toFixed(1)}° • Max {temperatureStats.max.toFixed(
-												1
-											)}°
-										</p>
-									{:else}
-										<p class="text-slate-500">No readings</p>
-									{/if}
-								</div>
-								<div class="rounded-lg border border-slate-800/60 bg-slate-900/70 p-3">
-									<p class="text-slate-400">Humidity</p>
-									{#if humidityStats}
-										<p class="text-lg font-semibold text-slate-50">
-											{humidityStats.avg.toFixed(1)}%
-										</p>
-										<p class="text-[11px] text-slate-400">
-											Min {humidityStats.min.toFixed(1)}% • Max {humidityStats.max.toFixed(1)}%
-										</p>
-									{:else}
-										<p class="text-slate-500">No readings</p>
-									{/if}
-								</div>
+							<div class="mt-3 space-y-2 text-xs text-slate-200">
+								{#if filteredAlerts.filter((d) => d.is_triggered).length === 0}
+									<p class="text-slate-500">No active alerts.</p>
+								{:else}
+									{#each filteredAlerts.filter((d) => d.is_triggered) as alert (alert.id)}
+										<div class="flex items-center justify-between">
+											<span class="truncate">
+												<img src={ACTIVE_ALERT_ICON} alt="Alert Icon" class="bg-red-500 inline h-5 w-5 mr-1" />
+												{alert.name}
+											</span>
+											<span class="font-mono text-slate-100">
+												{new Date(alert.created_at).toLocaleString()}
+											</span>
+										</div>
+									{/each}
+								{/if}
 							</div>
 						</div>
 					</div>
