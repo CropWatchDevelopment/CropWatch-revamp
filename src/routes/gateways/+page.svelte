@@ -4,6 +4,7 @@
 	import CWButton from '$lib/components/CWButton.svelte';
 	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWTable from '$lib/components/CWTable.svelte';
+	import NetworkTopology from '$lib/components/NetworkTopology.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -133,5 +134,10 @@
 				</div>
 			{/snippet}
 		</CWTable>
+	</div>
+
+	<div class="rounded-2xl border border-slate-800 bg-slate-900 p-4 mt-4 shadow-lg">
+		<h2 class="text-lg font-semibold text-slate-100 mb-4">Network Topology</h2>
+		<NetworkTopology gateways={data.gateways ?? []} height={500} />
 	</div>
 </div>
