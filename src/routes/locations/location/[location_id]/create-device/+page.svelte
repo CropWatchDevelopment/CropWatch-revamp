@@ -201,6 +201,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Add New Device - CropWatch Temp</title>
+</svelte:head>
+
 <div class="p-6">
 	<div class="mx-auto max-w-2xl space-y-6">
 		<!-- Header -->

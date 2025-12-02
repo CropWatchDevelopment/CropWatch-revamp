@@ -19,6 +19,10 @@
 	let isSubmitting = $state(false);
 </script>
 
+<svelte:head>
+	<title>Create Location - CropWatch Temp</title>
+</svelte:head>
+
 <div class="min-h-screen p-6">
 	<div class="mx-auto max-w-2xl space-y-6">
 		<!-- Header -->

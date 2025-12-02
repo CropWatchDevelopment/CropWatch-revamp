@@ -93,6 +93,10 @@
 	const totalDevices = $derived(data.locations.reduce((sum, l) => sum + l.device_count, 0));
 </script>
 
+<svelte:head>
+	<title>Locations - CropWatch Temp</title>
+</svelte:head>
+
 <div class="min-h-screen p-6">
 	<div class=" space-y-6">
 		<!-- Header -->

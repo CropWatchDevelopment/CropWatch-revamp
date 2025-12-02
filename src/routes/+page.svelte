@@ -257,6 +257,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Dashboard - CropWatch Temp</title>
+</svelte:head>
+
 <div class="flex h-screen min-h-0 overflow-hidden bg-slate-950 text-slate-50">
 	<!-- Main content -->
 	<main class="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-950">

@@ -86,6 +86,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Register - CropWatch Temp</title>
+</svelte:head>
+
 <main
 	class="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-900 text-slate-100"
 >

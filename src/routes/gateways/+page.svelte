@@ -84,6 +84,10 @@
 	];
 </script>
 
+<svelte:head>
+	<title>Gateways - CropWatch Temp</title>
+</svelte:head>
+
 <div class="min-h-screen p-6">
 	<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
 		<div>

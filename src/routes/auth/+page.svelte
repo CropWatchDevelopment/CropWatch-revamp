@@ -25,6 +25,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Login - CropWatch Temp</title>
+</svelte:head>
+
 <main
 	class="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-900 text-slate-100"
 >
