@@ -862,7 +862,7 @@
 															{#if badge}
 																<div class="flex items-center gap-2">
 																	{#if badge.dotClass}
-																		<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
+																		<span class={`h-2 w-2 rounded-full ${badge.dotClass}  ${badge.dotClass === 'bg-rose-500' ? 'animate-pulse' : ''}`}></span>
 																	{/if}
 																	<span
 																		class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}

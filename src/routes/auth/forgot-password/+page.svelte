@@ -1,21 +1,20 @@
 <script lang="ts">
 	import CWButton from '$lib/components/CWButton.svelte';
-	import KEY_ICON from '$lib/images/icons/key.svg';
 	import logo from '$lib/images/cropwatch_static.svg';
-	import ADD_PERSON_ICON from '$lib/images/icons/person_add.svg';
 	import FORGOT_SHIELD_ICON from '$lib/images/icons/forgot_shield.svg';
-	import { getToastContext } from '$lib/components/toast';
-	import { goto, invalidateAll } from '$app/navigation';
+	import BACK_ICON from '$lib/images/icons/back.svg';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { loadRecaptchaScript, executeRecaptcha } from '$lib/utils/recaptcha';
+	import { getToastContext } from '$lib/components/toast';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 
 	let { form } = $props<{
 		form: { message?: string; success?: boolean } | null;
 	}>();
 
-	let loggingIn: boolean = $state<boolean>(false);
-	let recaptchaTokenInput: HTMLInputElement;
+	let submitting: boolean = $state<boolean>(false);
 
 	const toast = getToastContext();
 
@@ -88,7 +87,7 @@
 		class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(15,23,42,0.3)_60%,rgba(15,23,42,0.6)_100%)]"
 	></div>
 
-	<!-- Login card -->
+	<!-- Forgot Password card -->
 	<div
 		class="relative z-10 w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/80 p-3 shadow-2xl shadow-black/40 backdrop-blur-sm"
 	>
@@ -99,93 +98,78 @@
 			</div>
 		</div>
 
-		<h1 class="text-center text-lg font-semibold text-slate-50">Welcome to CropWatch!</h1>
-		<p class="mt-1 text-center text-sm text-slate-400">Sign-in to your account for your latest updates</p>
+		<h1 class="text-center text-lg font-semibold text-slate-50">Reset Your Password</h1>
+		<p class="mt-1 text-center text-sm text-slate-400">Enter your email and we'll send you a reset link</p>
 
 		{#if form?.message}
 			<p
-				class="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
+				class={`mt-4 rounded-lg border px-3 py-2 text-sm ${
+					form.success
+						? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100'
+						: 'border-amber-500/40 bg-amber-500/10 text-amber-100'
+				}`}
 			>
 				{form.message}
 			</p>
 		{/if}
 
-		<form
-			method="POST"
-			action="?/login"
-			class="mt-6 space-y-4"
-			use:enhance={async ({ formData, cancel }) => {
-				loggingIn = true;
-				
-				try {
-					// Get reCAPTCHA token before submitting
-					const token = await executeRecaptcha('LOGIN');
-					formData.set('recaptchaToken', token);
-				} catch (error) {
-					console.error('reCAPTCHA error:', error);
-					toast.error('reCAPTCHA verification failed. Please try again.');
-					loggingIn = false;
-					cancel();
-					return;
-				}
+		{#if !form?.success}
+			<form
+				method="POST"
+				action="?/resetPassword"
+				class="mt-6 space-y-4"
+				use:enhance={async ({ formData, cancel }) => {
+					submitting = true;
+					
+					try {
+						const token = await executeRecaptcha('FORGOT_PASSWORD');
+						formData.set('recaptchaToken', token);
+					} catch (error) {
+						console.error('reCAPTCHA error:', error);
+						toast.error('reCAPTCHA verification failed. Please try again.');
+						submitting = false;
+						cancel();
+						return;
+					}
 
-					return async ({ result }) => {
-						if (result.type === 'redirect') {
-							// Invalidate all data to reload app state with authenticated session
-							await invalidateAll();
-							goto(result.location);
-						} else if (result.type === 'failure') {
-							const message = (result.data as { message?: string })?.message || 'Login failed';
+					return async ({ result, update }) => {
+						submitting = false;
+						if (result.type === 'failure') {
+							const message = (result.data as { message?: string })?.message || 'Failed to send reset link';
 							toast.error(message);
-							loggingIn = false;
+						} else if (result.type === 'success') {
+							await update();
 						} else if (result.type === 'error') {
 							toast.error('An error occurred. Please try again.');
-							loggingIn = false;
 						}
 					};
-			}}
-		>
-			<label class="block text-sm text-slate-300">
-				<span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Email</span>
-				<input
-					name="email"
-					type="email"
-					required
-					class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-					placeholder="you@example.com"
-					autocomplete="email"
-				/>
-			</label>
+				}}
+			>
+				<label class="block text-sm text-slate-300">
+					<span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Email</span>
+					<input
+						name="email"
+						type="email"
+						required
+						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+						placeholder="you@example.com"
+						autocomplete="email"
+					/>
+				</label>
 
-			<label class="block text-sm text-slate-300">
-				<span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Password</span>
-				<input
-					name="password"
-					type="password"
-					required
-					class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-					placeholder="••••••••"
-					autocomplete="current-password"
-				/>
-			</label>
+				<CWButton type="submit" variant="primary" loading={submitting} size="md" fullWidth={true}>
+					<img src={FORGOT_SHIELD_ICON} alt="Reset password icon" class="h-5 w-5" />
+					Send Reset Link
+				</CWButton>
+			</form>
+		{/if}
 
-			<CWButton type="submit" variant="primary" loading={loggingIn} size="md" fullWidth={true}>
-				<img src={KEY_ICON} alt="Sign in icon" class="h-5 w-5" />
-				Sign in
+		<div class="mt-4">
+			<CWButton type="button" variant="secondary" size="md" fullWidth={true} onclick={() => goto('/auth')}>
+				<img src={BACK_ICON} alt="Back icon" class="h-5 w-5" />
+				Back to Sign In
 			</CWButton>
-
-			<div class="flex flex-row gap-4">
-				<CWButton type="button" variant="secondary" size="md" fullWidth={true} onclick={() => goto('/auth/register')}>
-					<img src={ADD_PERSON_ICON} alt="Sign in icon" class="h-5 w-5" />
-					Create Account
-				</CWButton>
-
-				<CWButton type="button" variant="secondary" size="md" fullWidth={true} onclick={() => goto('/auth/forgot-password')}>
-					<img src={FORGOT_SHIELD_ICON} alt="Sign in icon" class="h-5 w-5" />
-					Forgot Password
-				</CWButton>
-			</div>
-		</form>
+		</div>
 
 		<!-- Footer -->
 		<p class="mt-6 text-center text-xs text-slate-500">

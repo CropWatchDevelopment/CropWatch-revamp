@@ -4,6 +4,8 @@ import { redirect } from '@sveltejs/kit';
 export const GET = async ({ locals, url }) => {
   const code = url.searchParams.get('code');
   const error = url.searchParams.get('error');
+  const next = url.searchParams.get('next') ?? '/';
+  
   if (error) {
     console.error('OAuth callback error:', error);
     throw redirect(303, `/auth?error=${error}`);
@@ -15,8 +17,8 @@ export const GET = async ({ locals, url }) => {
       console.error('Code exchange failed:', exchangeError);
       throw redirect(303, '/auth/error');
     }
-    // Supabase has set the session cookie at this point:contentReference[oaicite:17]{index=17}.
+    // Supabase has set the session cookie at this point
   }
-  // Redirect to a post-login page (e.g., the protected area)
-  throw redirect(303, '/private');
+  // Redirect to the specified next page or home
+  throw redirect(303, next);
 };
