@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import CWButton from '$lib/components/CWButton.svelte';
+	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWTable from '$lib/components/CWTable.svelte';
 	import type { PageData } from './$types';
 	import { page } from '$app/stores';
@@ -84,6 +85,7 @@
 <div class="min-h-screen p-6">
 	<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
 		<div>
+			<CWBackButton fallback="/" label="Back to Dashboard" class="mb-2" />
 			<p class="text-sm uppercase tracking-wide text-slate-500">Rules</p>
 			<h1 class="text-2xl font-semibold text-slate-100">Automation rules</h1>
 			<p class="text-sm text-slate-400">

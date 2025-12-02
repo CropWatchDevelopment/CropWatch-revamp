@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CWTable from '$lib/components/CWTable.svelte';
 	import CWButton from '$lib/components/CWButton.svelte';
+	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import { goto } from '$app/navigation';
 
 	interface LocationItem {
@@ -97,6 +98,7 @@
 		<!-- Header -->
 		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			<div>
+				<CWBackButton fallback="/" label="Back to Dashboard" class="mb-2" />
 				<h1 class="text-2xl font-bold text-slate-100">All Locations</h1>
 				<p class="mt-1 text-sm text-slate-400">View all locations & Create new locations</p>
 			</div>

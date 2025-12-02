@@ -111,7 +111,6 @@
 	>
 		<!-- Header with close button (only in drawer mode when open) -->
 		<div class="flex items-center justify-between gap-2">
-			<span class="text-xs font-semibold uppercase tracking-wide text-slate-400"> Navigation </span>
 			{#if useDrawer && isDrawerOpen}
 				<button
 					onclick={closeDrawer}

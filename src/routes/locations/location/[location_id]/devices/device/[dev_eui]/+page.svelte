@@ -9,9 +9,9 @@
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import type { PageData } from './$types';
 	import CWButton from '$lib/components/CWButton.svelte';
+	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWTable from '$lib/components/CWTable.svelte';
 	import { goto } from '$app/navigation';
-	import BACK_ICON from '$lib/images/icons/back.svg';
 	import SETTINGS_ICON from '$lib/images/icons/settings.svg';
 	import CWCopy from '$lib/components/CWCopy.svelte';
 
@@ -345,15 +345,7 @@
 <div class="flex flex-col gap-8 p-6 text-slate-100">
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div class="flex flex-row w-full items-center gap-3">
-			<CWButton
-				variant="primary"
-				onclick={() => {
-					goto(resolve(page.url.searchParams.get('prev') ?? '/locations'));
-				}}
-			>
-				<img src={BACK_ICON} alt="Edit device" class="h-4 w-4" />
-				Back
-			</CWButton>
+			<CWBackButton fallback="/locations" />
 
 			<span class="flex flex-grow"></span>
 

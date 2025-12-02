@@ -7,11 +7,12 @@
 	import type { Location } from '$lib/Interfaces/location.interface';
 	import type { Facility } from '$lib/Interfaces/facility.interface';
 	import CWButton from '$lib/components/CWButton.svelte';
+	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWDialog from '$lib/components/CWDialog.svelte';
-	import BACK_ICON from '$lib/images/icons/back.svg';
-    import DOWNLOAD_ICON from '$lib/images/icons/download.svg';
-    import SAVE_ICON from '$lib/images/icons/save.svg';
+	import DOWNLOAD_ICON from '$lib/images/icons/download.svg';
+	import SAVE_ICON from '$lib/images/icons/save.svg';
 	import CWCopy from '$lib/components/CWCopy.svelte';
+	import CWPermissionRowItem from '$lib/components/CWPermissionRowItem.svelte';
 
 	const getAppState = getContext<() => AppState>('appState');
 	let appState = $derived(getAppState());
@@ -94,13 +95,6 @@
 		// Show success toast here
 	}
 
-	function handleBack() {
-		const prev = page.url.searchParams.get('prev');
-		goto(
-			prev ?? `/locations/location/${page.params.location_id}/devices/device/${page.params.dev_eui}`
-		);
-	}
-
 	function formatDate(dateString: string) {
 		return new Date(dateString).toLocaleDateString('en-US', {
 			year: 'numeric',
@@ -123,10 +117,7 @@
 	<!-- Header -->
 	<div class="flex flex-wrap items-center justify-between gap-4">
 		<div class="flex items-center gap-4">
-			<CWButton variant="secondary" onclick={handleBack}>
-				<img src={BACK_ICON} alt="Back" class="h-4 w-4" />
-				Back
-			</CWButton>
+			<CWBackButton />
 			<div>
 				<h1 class="text-2xl font-semibold text-white">Device Settings</h1>
 				<p class="text-sm text-slate-400">{device?.name ?? 'Unknown Device'} • {device?.id}</p>
@@ -163,7 +154,7 @@
 						<select
 							id="location"
 							bind:value={form.locationId}
-							class="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-4 py-2.5 text-sm text-white outline-none transition-colors focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+							class="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-100 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
 						>
 							{#each appState.locations as loc (loc.id)}
 								<option value={loc.id}>{loc.name}</option>
@@ -176,7 +167,7 @@
 
 					<div class="flex justify-end pt-2">
 						<CWButton variant="primary" onclick={handleSaveGeneral} loading={isSaving}>
-                            <img src={SAVE_ICON} alt="Save" class="h-4 w-4 mr-1" />
+							<img src={SAVE_ICON} alt="Save" class="h-4 w-4 mr-1" />
 							Save Changes
 						</CWButton>
 					</div>
@@ -206,48 +197,16 @@
 
 				<div class="mt-6 space-y-3">
 					{#each permissions as user (user.id)}
-						<div
-							class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 p-4 transition-colors hover:bg-slate-900/60"
-						>
-							<div class="flex items-center gap-3">
-								<div
-									class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-white"
-								>
-									{user.avatar}
-								</div>
-								<div>
-									<p class="font-medium text-white">{user.name}</p>
-									<p class="text-sm text-slate-400">{user.email}</p>
-								</div>
-							</div>
-							<div class="flex items-center gap-3">
-								<span
-									class="rounded-full px-3 py-1 text-xs font-medium ring-1 {roleColors[user.role]}"
-								>
-									{user.role}
-								</span>
-								{#if user.role !== 'owner'}
-									<button
-										class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
-										aria-label="User options for {user.name}"
-									>
-										<svg
-											class="h-4 w-4"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											stroke-width="2"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-											/>
-										</svg>
-									</button>
-								{/if}
-							</div>
-						</div>
+						<CWPermissionRowItem
+							{user}
+							badgeClass={roleColors[user.role]}
+							permissionName={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+							inlineEdit={true}
+							canEdit={true}
+							onUpdate={(updatedUser) => {
+								permissions = permissions.map((u) => (u.id === updatedUser.id ? updatedUser : u));
+							}}
+						/>
 					{/each}
 				</div>
 			</section>
@@ -398,15 +357,21 @@
 				<div class="mt-6 space-y-4">
 					<div class="flex items-center justify-between border-b border-slate-800 pb-3">
 						<span class="text-sm text-slate-400">Type</span>
-						<span class="text-sm font-medium text-white"><CWCopy value={deviceInfo.type} size="sm" /></span>
+						<span class="text-sm font-medium text-white"
+							><CWCopy value={deviceInfo.type} size="sm" /></span
+						>
 					</div>
 					<div class="flex items-center justify-between border-b border-slate-800 pb-3">
 						<span class="text-sm text-slate-400">Model</span>
-						<span class="text-sm font-medium text-white"><CWCopy value={deviceInfo.model} size="sm" /></span>
+						<span class="text-sm font-medium text-white"
+							><CWCopy value={deviceInfo.model} size="sm" /></span
+						>
 					</div>
 					<div class="flex items-center justify-between border-b border-slate-800 pb-3">
 						<span class="text-sm text-slate-400">Serial Number</span>
-						<span class="font-mono text-sm text-white"><CWCopy value={deviceInfo.serialNumber} size="sm" /></span>
+						<span class="font-mono text-sm text-white"
+							><CWCopy value={deviceInfo.serialNumber} size="sm" /></span
+						>
 					</div>
 					<div class="flex items-center justify-between border-b border-slate-800 pb-3">
 						<span class="text-sm text-slate-400">Firmware</span>
@@ -479,21 +444,21 @@
 
 						<div class="mt-2 flex items-center justify-between">
 							<span class="text-sm text-slate-400">Sensor 1</span>
-							<span class="text-sm font-medium  text-white">xxxxxxx</span>
+							<span class="text-sm font-medium text-white">xxxxxxx</span>
 						</div>
 
 						<div class="mt-2 flex items-center justify-between">
 							<span class="text-sm text-slate-400">Sensor 2</span>
-							<span class="text-sm font-medium  text-white">xxxxxxx</span>
+							<span class="text-sm font-medium text-white">xxxxxxx</span>
 						</div>
 
 						<div class="mt-2 flex items-center justify-between">
 							<span class="text-sm text-slate-400">Calibration Report</span>
-							<span class="text-sm font-medium  text-white">
+							<span class="text-sm font-medium text-white">
 								<CWButton variant="secondary" size="sm">
-                                    <img src={DOWNLOAD_ICON} alt="Download" class="h-4 w-4 mr-1" />
-                                    Download
-                                </CWButton>
+									<img src={DOWNLOAD_ICON} alt="Download" class="h-4 w-4 mr-1" />
+									Download
+								</CWButton>
 							</span>
 						</div>
 					</div>

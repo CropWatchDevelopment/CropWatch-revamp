@@ -14,9 +14,11 @@
 	color: var(--color-text);
 }
 
+html,
 body {
-	min-height: 100vh;
+	height: 100%;
 	margin: 0;
+	overflow: hidden;
 }
 
 /* Custom scrollbars to match the slate/emerald palette */

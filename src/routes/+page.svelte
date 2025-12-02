@@ -451,7 +451,7 @@
 									{#each filteredAlerts.filter((d) => d.is_triggered) as alert (alert.id)}
 										<div class="flex items-center justify-between">
 											<span class="truncate">
-												<img src={ACTIVE_ALERT_ICON} alt="Alert Icon" class="bg-red-500 inline h-5 w-5 mr-1" />
+												<img src={ACTIVE_ALERT_ICON} alt="Alert Icon" class="inline h-7 w-7 mr-1" />
 												{alert.name}
 											</span>
 											<span class="font-mono text-slate-100">

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import CWButton from '$lib/components/CWButton.svelte';
+	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWDialog from '$lib/components/CWDialog.svelte';
 	import CWCopy from '$lib/components/CWCopy.svelte';
 	import CWTable from '$lib/components/CWTable.svelte';
@@ -482,22 +483,7 @@
 		<div class="flex items-start justify-between">
 			<div>
 				<div class="flex items-center gap-3">
-					<a
-						href={resolve('/locations')}
-						class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-200"
-						aria-label="Back to locations"
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-						</svg>
-					</a>
+					<CWBackButton fallback="/locations" />
 					<div>
 						<h1 class="text-2xl font-bold text-slate-100">{locationName}</h1>
 						<p class="mt-1 text-sm text-slate-400">{locationDescription}</p>
