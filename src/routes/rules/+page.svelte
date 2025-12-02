@@ -32,7 +32,7 @@
 			type: 'stacked',
 			secondaryKey: 'ruleGroupId',
 			sortable: true,
-			href: (item: RuleItem) => resolve(`/rules/${item.ruleGroupId}/edit`)
+			href: (item: RuleItem) => resolve(`/rules/${item.ruleGroupId}/edit-rule`)
 		},
 		{
 			key: 'device_label',
@@ -73,7 +73,7 @@
 					variant: 'ghost',
 					onClick: (row: unknown) => {
 						const item = row as RuleItem;
-						const url = resolve(`/rules/${item.ruleGroupId}/edit`);
+						const url = resolve(`/rules/${item.ruleGroupId}/edit-rule`);
 						if (typeof window !== 'undefined') window.location.href = url;
 					}
 				}
