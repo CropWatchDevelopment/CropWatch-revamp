@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import type { Snippet } from 'svelte';
 	import CWButton from './CWButton.svelte';
+	import CWSelect from './CWSelect.svelte';
 
 	type SortDir = 'asc' | 'desc';
 	type FilterFn<T> = (item: T, search: string) => boolean;
@@ -18,12 +20,21 @@
 		class?: string;
 	};
 
+	type SelectOption = { value: string | number; label: string };
+	type SelectConfig<T = unknown> = {
+		options: SelectOption[] | ((row: T) => SelectOption[]);
+		placeholder?: string;
+		onChange?: (row: T, value: string | number | null) => void;
+		disabled?: boolean | ((row: T) => boolean);
+		size?: 'sm' | 'md' | 'lg';
+	};
+
 	type ColumnConfig = {
 		key: string;
 		label: string;
 		value?: string;
 		secondaryKey?: string;
-		type?: 'text' | 'number' | 'datetime' | 'stacked' | 'badge' | 'buttons';
+		type?: 'text' | 'number' | 'datetime' | 'stacked' | 'badge' | 'buttons' | 'select' | 'custom';
 		href?: string | ((row: unknown) => string | undefined);
 		suffix?: string;
 		align?: 'left' | 'center' | 'right';
@@ -34,7 +45,35 @@
 		width?: string;
 		cellClass?: string;
 		buttons?: ButtonConfig[];
+		select?: SelectConfig;
 	};
+
+	type TableContext = {
+		sortKey: string;
+		sortDir: SortDir;
+		search: string;
+		page: number;
+		pageSize: number;
+		pageCount: number;
+		total: number;
+		useVirtual: boolean;
+		visibleStart: number;
+		visibleEnd: number;
+		startIndex: number;
+		hasActions: boolean;
+		setSort: (key: string, dir: SortDir) => void;
+		sortIcon: (key: string) => string;
+		clearAll: () => void;
+		goToPage: (p: number) => void;
+		nextPage: () => void;
+		prevPage: () => void;
+		setPageSize: (s: number) => void;
+		setSearch: (s: string) => void;
+		toggleVirtual: () => void;
+	};
+
+	// Export types for external use
+	export type { ColumnConfig, SelectConfig, SelectOption, ButtonConfig, BadgeEntry, TableContext };
 
 	const defaultFilter: FilterFn<unknown> = (item, search) => {
 		if (!search.trim()) return true;
@@ -72,6 +111,7 @@
 		viewportHeight = 0,
 		header = undefined,
 		row = undefined,
+		cell = undefined,
 		actions = undefined,
 		empty = undefined,
 		pageSize = $bindable(15),
@@ -83,6 +123,29 @@
 		class: className = 'text-xs text-slate-200',
 		loading = false,
 		loadingText = 'Loading...'
+	}: {
+		items?: unknown[];
+		columns?: ColumnConfig[];
+		storageKey?: string | null;
+		filterFn?: FilterFn<unknown>;
+		sortFn?: SortFn<unknown>;
+		getRowId?: RowIdFn<unknown>;
+		rowHeight?: number;
+		viewportHeight?: number;
+		header?: Snippet<[TableContext]>;
+		row?: Snippet<[unknown, number, TableContext]>;
+		cell?: Snippet<[{ item: unknown; col: ColumnConfig; value: unknown }]>;
+		actions?: Snippet<[unknown, number, TableContext]>;
+		empty?: Snippet;
+		pageSize?: number;
+		page?: number;
+		search?: string;
+		sortKey?: string;
+		sortDir?: SortDir;
+		virtual?: boolean;
+		class?: string;
+		loading?: boolean;
+		loadingText?: string;
 	} = $props();
 
 	const columnMap = $derived.by(() => {
@@ -112,6 +175,7 @@
 	let scrollTop = $state(0);
 	let scroller: HTMLDivElement | null = null;
 	let containerHeight = $state(viewportHeight);
+	let isMobile = $state(false);
 
 	const setColumnFilters = (value: Record<string, string[]>) => {
 		columnFilters = value;
@@ -171,6 +235,12 @@
 		if (!sortKey && columns.length) {
 			sortKey = columns[0].key;
 		}
+
+		const mq = window.matchMedia('(max-width: 640px)');
+		const updateMobile = () => (isMobile = mq.matches);
+		updateMobile();
+		mq.addEventListener('change', updateMobile);
+		return () => mq.removeEventListener('change', updateMobile);
 	});
 
 	const getColumnValue = (item: unknown, col: ColumnConfig) => {
@@ -354,6 +424,12 @@
 	};
 
 	$effect(() => {
+		if (isMobile && virtual) {
+			virtual = false;
+		}
+	});
+
+	$effect(() => {
 		visibleRows;
 		if (virtual && scroller && scrollTop > scroller.scrollHeight) {
 			scroller.scrollTop = 0;
@@ -369,7 +445,7 @@
 			: Math.min(total, (page - 1) * pageSize + paginated.length)
 	);
 
-	const tableContext = $derived.by(() => ({
+	const tableContext: TableContext = $derived.by(() => ({
 		sortKey,
 		sortDir,
 		search,
@@ -382,7 +458,6 @@
 		visibleEnd,
 		startIndex,
 		hasActions: Boolean(actions),
-		actions,
 		setSort,
 		sortIcon,
 		clearAll,
@@ -438,10 +513,10 @@
 
 <div class={`cw-table flex h-full w-full flex-col ${className}`}>
 	<div
-		class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/60 px-4 py-3"
+		class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-950/60 px-3 py-2 sm:gap-3 sm:px-4 sm:py-3"
 	>
 		<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
-			<label class="text-slate-400" for="table-search">Search</label>
+			<label class="hidden sm:block text-slate-400" for="table-search">Search</label>
 			<div class="relative flex-1 sm:flex-none">
 				<input
 					id="table-search"
@@ -463,21 +538,23 @@
 			</div>
 		</div>
 
-		<div class="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
-			<button
-				type="button"
-				class={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[11px] transition ${
-					virtual
-						? 'border-sky-500/70 bg-sky-500/10 text-sky-200'
-						: 'border-slate-700 bg-slate-900 text-slate-200 hover:border-slate-600'
-				}`}
-				onclick={toggleVirtual}
-			>
-				<span class={`h-2 w-2 rounded-full ${virtual ? 'bg-sky-400' : 'bg-slate-500'}`}></span>
-				<span>{virtual ? 'Virtual scroll' : 'Paginated'}</span>
-			</button>
+		<div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end sm:gap-3">
+			{#if !isMobile}
+				<button
+					type="button"
+					class={`virtual-toggle inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[11px] transition ${
+						virtual
+							? 'border-sky-500/70 bg-sky-500/10 text-sky-200'
+							: 'border-slate-700 bg-slate-900 text-slate-200 hover:border-slate-600'
+					}`}
+					onclick={toggleVirtual}
+				>
+					<span class={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${virtual ? 'bg-sky-400' : 'bg-slate-500'}`}></span>
+					<span>{virtual ? 'Virtual' : 'Paged'}</span>
+				</button>
+			{/if}
 
-			<label class="flex items-center gap-2 text-slate-400">
+			<label class="hidden sm:flex items-center gap-2 text-slate-400">
 				<span>Page size</span>
 				<select
 					class="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -492,43 +569,43 @@
 				</select>
 			</label>
 
-			{#if sortKey || hasActiveFilters}
-				<div class="flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900/70 px-3 py-1 text-[11px] text-slate-200">
+			{#if (sortKey || hasActiveFilters) && !isMobile}
+				<div class="flex flex-wrap items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900/70 px-2 py-1 text-[9px] sm:gap-2 sm:text-[11px] text-slate-200">
 					{#if sortKey}
-						<span class="inline-flex items-center gap-1 rounded bg-sky-500/15 px-2 py-0.5 text-sky-200">
-							Sort: {sortKey} {sortDir === 'asc' ? '↑' : '↓'}
+						<span class="inline-flex items-center gap-1 rounded bg-sky-500/15 px-1.5 py-0.5 sm:px-2 text-sky-200">
+							{sortKey} {sortDir === 'asc' ? '↑' : '↓'}
 						</span>
 					{/if}
 					{#if hasActiveFilters}
-						<span class="inline-flex items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-amber-200">
-							Filters on
+						<span class="inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 sm:px-2 text-amber-200">
+							Filtered
 						</span>
 					{/if}
 					<button
 						type="button"
-						class="rounded bg-slate-800 px-2 py-0.5 text-slate-200 ring-1 ring-slate-700 hover:bg-slate-700"
+						class="rounded bg-slate-800 px-1.5 py-0.5 sm:px-2 text-slate-200 ring-1 ring-slate-700 hover:bg-slate-700"
 						onclick={clearAll}
 					>
-						Clear all
+						Clear
 					</button>
 				</div>
 			{/if}
 
-			<div class="text-slate-400">
-				Showing {visibleStart}–{visibleEnd} of {total}
+			<div class="ml-auto text-[10px] sm:ml-0 sm:text-xs text-slate-400">
+				{visibleStart}–{visibleEnd} of {total}
 			</div>
 		</div>
 	</div>
 
-	<div class="relative flex min-h-0 flex-1">
+	<div class="relative flex min-h-0 flex-1 overflow-hidden">
 		<div
-			class="flex h-full w-full overflow-auto"
+			class="mobile-scroll-container flex h-full w-full overflow-auto"
 			{@attach setScrollerRef}
 			onscroll={virtual ? handleScroll : undefined}
 			bind:clientHeight={containerHeight}
 			style={virtual && viewportHeight > 0 ? `max-height:${viewportHeight}px` : ''}
 		>
-			<table class="w-full min-w-[280px] table-auto text-[20px] text-slate-100 sm:text-[11px]">
+			<table class="w-full min-w-0 table-auto text-sm text-slate-100 sm:text-[11px] md:min-w-[280px]">
 				<thead class="sticky top-0 bg-slate-900/90 text-slate-300 backdrop-blur">
 					{#if header}
 						{@render header(tableContext)}
@@ -663,7 +740,7 @@
 				<tbody>
 					{#if total === 0}
 						{#if empty}
-							{@render empty(tableContext)}
+							{@render empty()}
 						{:else}
 							<tr>
 								<td
@@ -693,71 +770,172 @@
 												style={col.width ?? ''}
 												data-label={col.label}
 											>
-												<svelte:element
-													this={col.href && col.type !== 'buttons' ? 'a' : 'div'}
-													href={col.href && col.type !== 'buttons'
-														? resolveHref(item, col) ?? undefined
-														: undefined}
-													class={`block ${col.href && col.type !== 'buttons' ? 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 hover:underline decoration-sky-400/70 decoration-1' : ''}`}
-												>
-													{#if col.type === 'badge' && col.badges}
-														{@const raw = getColumnValue(item, col)}
-														{@const badge = col.badges[String(raw)]}
-														{#if badge}
-															<div class="flex items-center gap-2">
-																{#if badge.dotClass}
-																	<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
-																{/if}
-																<span
-																	class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}
-																>
-																	{badge.label ?? String(raw)}
-																</span>
-															</div>
-														{:else}
-															<span>{String(raw ?? '')}</span>
-														{/if}
-													{:else if col.type === 'stacked'}
-														{@const primary = getColumnValue(item, col)}
-														{@const secondary = (item as Record<string, unknown>)[
-															col.secondaryKey ?? ''
-														]}
-														<div class="flex flex-col text-left">
-															<span class="text-slate-50">{primary}</span>
-															{#if secondary}
-																<span class="text-[11px] text-slate-500">{secondary}</span>
-															{/if}
-														</div>
-													{:else if col.type === 'datetime'}
-														{@const raw = getColumnValue(item, col)}
-														<span class="font-mono text-[11px] text-slate-400">
-															{raw ? new Date(raw as string).toLocaleString() : ''}
-														</span>
-													{:else}
-														{@const raw = getColumnValue(item, col)}
-														{#if col.type === 'number'}
-															<span class="font-mono text-[13px] text-slate-50">
-																{Number(raw).toLocaleString()}{col.suffix ?? ''}
-															</span>
-														{:else if col.type === 'buttons' && col.buttons?.length}
-															<div class="flex flex-wrap items-center justify-end gap-2">
-																{#each col.buttons as btn, bIdx (bIdx)}
-																	<button
-																		class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
-																		type="button"
-																		onclick={() => btn.onClick?.(item)}
+												{#if col.href && col.type !== 'buttons' && col.type !== 'select' && col.type !== 'custom'}
+													<a
+														href={resolveHref(item, col) ?? undefined}
+														class="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 hover:underline decoration-sky-400/70 decoration-1"
+													>
+														{#if col.type === 'badge' && col.badges}
+															{@const raw = getColumnValue(item, col)}
+															{@const badge = col.badges[String(raw)]}
+															{#if badge}
+																<div class="flex items-center gap-2">
+																	{#if badge.dotClass}
+																		<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
+																	{/if}
+																	<span
+																		class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}
 																	>
-																		{btn.label}
-																	</button>
-																{/each}
+																		{badge.label ?? String(raw)}
+																	</span>
+																</div>
+															{:else}
+																<span>{String(raw ?? '')}</span>
+															{/if}
+														{:else if col.type === 'stacked'}
+															{@const primary = getColumnValue(item, col)}
+															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
+															<div class="flex flex-col text-left">
+																<span class="text-slate-50">{primary}</span>
+																{#if secondary}
+																	<span class="text-[11px] text-slate-500">{secondary}</span>
+																{/if}
 															</div>
-														{:else}
-															<span class="text-slate-50">
-																{raw}{col.suffix ?? ''}
+														{:else if col.type === 'datetime'}
+															{@const raw = getColumnValue(item, col)}
+															<span class="font-mono text-[11px] text-slate-400">
+																{raw ? new Date(raw as string).toLocaleString() : ''}
 															</span>
+														{:else}
+															{@const raw = getColumnValue(item, col)}
+															{#if col.type === 'number'}
+																<span class="font-mono text-[13px] text-slate-50">
+																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
+																</span>
+															{:else if col.type === 'buttons' && col.buttons?.length}
+																<div class="flex flex-wrap items-center justify-end gap-2">
+																	{#each col.buttons as btn, bIdx (bIdx)}
+																		<button
+																			class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
+																			type="button"
+																			onclick={() => btn.onClick?.(item)}
+																		>
+																			{btn.label}
+																		</button>
+																	{/each}
+																</div>
+															{:else if col.type === 'select' && col.select}
+																{@const selectConfig = col.select}
+																{@const selectOptions = typeof selectConfig.options === 'function' ? selectConfig.options(item) : selectConfig.options}
+																{@const isSelectDisabled = typeof selectConfig.disabled === 'function' ? selectConfig.disabled(item) : (selectConfig.disabled ?? false)}
+																<CWSelect
+																	options={selectOptions}
+																	value={raw as string | number | null}
+																	placeholder={selectConfig.placeholder ?? 'Select...'}
+																	size={selectConfig.size ?? 'sm'}
+																	disabled={isSelectDisabled}
+																	onchange={(e) => {
+																		const target = e.currentTarget as HTMLSelectElement;
+																		const newValue =
+																			target.value === ''
+																				? null
+																				: isNaN(Number(target.value))
+																					? target.value
+																					: Number(target.value);
+																		selectConfig.onChange?.(item, newValue);
+																	}}
+																/>
+															{:else if col.type === 'custom' && cell}
+																{@render cell({ item, col, value: raw })}
+															{:else}
+																<span class="text-slate-50">
+																	{raw}{col.suffix ?? ''}
+																</span>
+															{/if}
 														{/if}
-													{/if}
-												</svelte:element>
+														</a>
+													{:else}
+														<div class="block">
+															{#if col.type === 'badge' && col.badges}
+																{@const raw = getColumnValue(item, col)}
+															{@const badge = col.badges[String(raw)]}
+															{#if badge}
+																<div class="flex items-center gap-2">
+																	{#if badge.dotClass}
+																		<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
+																	{/if}
+																	<span
+																		class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}
+																	>
+																		{badge.label ?? String(raw)}
+																	</span>
+																</div>
+															{:else}
+																<span>{String(raw ?? '')}</span>
+															{/if}
+														{:else if col.type === 'stacked'}
+															{@const primary = getColumnValue(item, col)}
+															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
+															<div class="flex flex-col text-left">
+																<span class="text-slate-50">{primary}</span>
+																{#if secondary}
+																	<span class="text-[11px] text-slate-500">{secondary}</span>
+																{/if}
+															</div>
+														{:else if col.type === 'datetime'}
+															{@const raw = getColumnValue(item, col)}
+															<span class="font-mono text-[11px] text-slate-400">
+																{raw ? new Date(raw as string).toLocaleString() : ''}
+															</span>
+														{:else}
+															{@const raw = getColumnValue(item, col)}
+															{#if col.type === 'number'}
+																<span class="font-mono text-[13px] text-slate-50">
+																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
+																</span>
+															{:else if col.type === 'buttons' && col.buttons?.length}
+																<div class="flex flex-wrap items-center justify-end gap-2">
+																	{#each col.buttons as btn, bIdx (bIdx)}
+																		<button
+																			class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
+																			type="button"
+																			onclick={() => btn.onClick?.(item)}
+																		>
+																			{btn.label}
+																		</button>
+																	{/each}
+																</div>
+															{:else if col.type === 'select' && col.select}
+																{@const selectConfig = col.select}
+																{@const selectOptions = typeof selectConfig.options === 'function' ? selectConfig.options(item) : selectConfig.options}
+																{@const isSelectDisabled = typeof selectConfig.disabled === 'function' ? selectConfig.disabled(item) : (selectConfig.disabled ?? false)}
+																<CWSelect
+																	options={selectOptions}
+																	value={raw as string | number | null}
+																	placeholder={selectConfig.placeholder ?? 'Select...'}
+																	size={selectConfig.size ?? 'sm'}
+																	disabled={isSelectDisabled}
+																	onchange={(e) => {
+																		const target = e.currentTarget as HTMLSelectElement;
+																		const newValue =
+																			target.value === ''
+																				? null
+																				: isNaN(Number(target.value))
+																					? target.value
+																					: Number(target.value);
+																		selectConfig.onChange?.(item, newValue);
+																	}}
+																/>
+															{:else if col.type === 'custom' && cell}
+																{@render cell({ item, col, value: raw })}
+															{:else}
+																<span class="text-slate-50">
+																	{raw}{col.suffix ?? ''}
+																</span>
+															{/if}
+														{/if}
+													</div>
+												{/if}
 											</td>
 										{/each}
 										{#if actions}
@@ -784,83 +962,179 @@
 					{:else}
 						{#each paginated as item, idx (getRowId(item, (page - 1) * pageSize + idx))}
 							<tr class="border-t border-slate-900/80 odd:bg-slate-700/40 even:bg-slate-800/50 hover:bg-blue-800/70">
-								{#if columns.length}
-									{#each columns as col (col.key)}
-										<td
-											class={`px-2 md:px-3 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
-											style={col.width ?? ''}
-											data-label={col.label}
-										>
-											<svelte:element
-												this={col.href && col.type !== 'buttons' ? 'a' : 'div'}
-												href={col.href && col.type !== 'buttons'
-													? resolveHref(item, col) ?? undefined
-													: undefined}
-												class={`block ${col.href && col.type !== 'buttons' ? 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 hover:underline decoration-sky-400/70 decoration-1' : ''}`}
+									{#if columns.length}
+										{#each columns as col (col.key)}
+											<td
+												class={`px-2 md:px-3 align-middle ${alignClass(col.align)} ${col.cellClass ?? ''}`}
+												style={col.width ?? ''}
+												data-label={col.label}
 											>
-												{#if col.type === 'badge' && col.badges}
-													{@const raw = getColumnValue(item, col)}
-													{@const badge = col.badges[String(raw)]}
-													{#if badge}
-														<div class="flex items-center gap-2">
-															{#if badge.dotClass}
-																<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
+												{#if col.href && col.type !== 'buttons' && col.type !== 'select' && col.type !== 'custom'}
+													<a
+														href={resolveHref(item, col) ?? undefined}
+														class="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 hover:underline decoration-sky-400/70 decoration-1"
+													>
+														{#if col.type === 'badge' && col.badges}
+															{@const raw = getColumnValue(item, col)}
+															{@const badge = col.badges[String(raw)]}
+															{#if badge}
+																<div class="flex items-center gap-2">
+																	{#if badge.dotClass}
+																		<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
+																	{/if}
+																	<span
+																		class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}
+																	>
+																		{badge.label ?? String(raw)}
+																	</span>
+																</div>
+															{:else}
+																<span>{String(raw ?? '')}</span>
 															{/if}
-															<span
-																class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}
-															>
-																{badge.label ?? String(raw)}
+														{:else if col.type === 'stacked'}
+															{@const primary = getColumnValue(item, col)}
+															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
+															<div class="flex flex-col text-left">
+																<span class="text-slate-50">{primary}</span>
+																{#if secondary}
+																	<span class="text-[11px] text-slate-500">{secondary}</span>
+																{/if}
+															</div>
+														{:else if col.type === 'datetime'}
+															{@const raw = getColumnValue(item, col)}
+															<span class="font-mono text-[11px] text-slate-400">
+																{raw ? new Date(raw as string).toLocaleString() : ''}
 															</span>
-														</div>
+														{:else}
+															{@const raw = getColumnValue(item, col)}
+															{#if col.type === 'number'}
+																<span class="font-mono text-[13px] text-slate-50">
+																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
+																</span>
+															{:else if col.type === 'buttons' && col.buttons?.length}
+																<div class="flex flex-wrap items-center gap-2">
+																	{#each col.buttons as btn, bIdx (bIdx)}
+																		<CWButton
+																			class={`${btn.class ?? ''}`}
+																			variant={btn.variant}
+																			onclick={() => btn.onClick?.(item)}
+																		>
+																			{btn.label}
+																		</CWButton>
+																	{/each}
+																</div>
+															{:else if col.type === 'select' && col.select}
+																{@const selectConfig = col.select}
+																{@const selectOptions = typeof selectConfig.options === 'function' ? selectConfig.options(item) : selectConfig.options}
+																{@const isSelectDisabled = typeof selectConfig.disabled === 'function' ? selectConfig.disabled(item) : (selectConfig.disabled ?? false)}
+																<CWSelect
+																	options={selectOptions}
+																	value={raw as string | number | null}
+																	placeholder={selectConfig.placeholder ?? 'Select...'}
+																	size={selectConfig.size ?? 'sm'}
+																	disabled={isSelectDisabled}
+																	onchange={(e) => {
+																		const target = e.currentTarget as HTMLSelectElement;
+																		const newValue =
+																			target.value === ''
+																				? null
+																				: isNaN(Number(target.value))
+																					? target.value
+																					: Number(target.value);
+																		selectConfig.onChange?.(item, newValue);
+																	}}
+																/>
+															{:else if col.type === 'custom' && cell}
+																{@render cell({ item, col, value: raw })}
+															{:else}
+																<span class="text-slate-50">
+																	{raw}{col.suffix ?? ''}
+																</span>
+															{/if}
+														{/if}
+														</a>
 													{:else}
-														<span>{String(raw ?? '')}</span>
-													{/if}
-												{:else if col.type === 'stacked'}
-													{@const primary = getColumnValue(item, col)}
-													{@const secondary = (item as Record<string, unknown>)[
-														col.secondaryKey ?? ''
-													]}
-													<div class="flex flex-col text-left">
-														<span class="text-slate-50">{primary}</span>
-														{#if secondary}
-															<span class="text-[11px] text-slate-500">{secondary}</span>
+														<div class="block">
+															{#if col.type === 'badge' && col.badges}
+																{@const raw = getColumnValue(item, col)}
+															{@const badge = col.badges[String(raw)]}
+															{#if badge}
+																<div class="flex items-center gap-2">
+																	{#if badge.dotClass}
+																		<span class={`h-2 w-2 rounded-full ${badge.dotClass}`}></span>
+																	{/if}
+																	<span
+																		class={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.badgeClass ?? ''}`}
+																	>
+																		{badge.label ?? String(raw)}
+																	</span>
+																</div>
+															{:else}
+																<span>{String(raw ?? '')}</span>
+															{/if}
+														{:else if col.type === 'stacked'}
+															{@const primary = getColumnValue(item, col)}
+															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
+															<div class="flex flex-col text-left">
+																<span class="text-slate-50">{primary}</span>
+																{#if secondary}
+																	<span class="text-[11px] text-slate-500">{secondary}</span>
+																{/if}
+															</div>
+														{:else if col.type === 'datetime'}
+															{@const raw = getColumnValue(item, col)}
+															<span class="font-mono text-[11px] text-slate-400">
+																{raw ? new Date(raw as string).toLocaleString() : ''}
+															</span>
+														{:else}
+															{@const raw = getColumnValue(item, col)}
+															{#if col.type === 'number'}
+																<span class="font-mono text-[13px] text-slate-50">
+																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
+																</span>
+															{:else if col.type === 'buttons' && col.buttons?.length}
+																<div class="flex flex-wrap items-center gap-2">
+																	{#each col.buttons as btn, bIdx (bIdx)}
+																		<CWButton
+																			class={`${btn.class ?? ''}`}
+																			variant={btn.variant}
+																			onclick={() => btn.onClick?.(item)}
+																		>
+																			{btn.label}
+																		</CWButton>
+																	{/each}
+																</div>
+															{:else if col.type === 'select' && col.select}
+																{@const selectConfig = col.select}
+																{@const selectOptions = typeof selectConfig.options === 'function' ? selectConfig.options(item) : selectConfig.options}
+																{@const isSelectDisabled = typeof selectConfig.disabled === 'function' ? selectConfig.disabled(item) : (selectConfig.disabled ?? false)}
+																<CWSelect
+																	options={selectOptions}
+																	value={raw as string | number | null}
+																	placeholder={selectConfig.placeholder ?? 'Select...'}
+																	size={selectConfig.size ?? 'sm'}
+																	disabled={isSelectDisabled}
+																	onchange={(e) => {
+																		const target = e.currentTarget as HTMLSelectElement;
+																		const newValue = target.value === '' ? null : (isNaN(Number(target.value)) ? target.value : Number(target.value));
+																		selectConfig.onChange?.(item, newValue);
+																	}}
+																/>
+															{:else if col.type === 'custom' && cell}
+																{@render cell({ item, col, value: raw })}
+															{:else}
+																<span class="text-slate-50">
+																	{raw}{col.suffix ?? ''}
+																</span>
+															{/if}
 														{/if}
 													</div>
-												{:else if col.type === 'datetime'}
-													{@const raw = getColumnValue(item, col)}
-													<span class="font-mono text-[11px] text-slate-400">
-														{raw ? new Date(raw as string).toLocaleString() : ''}
-													</span>
-												{:else}
-													{@const raw = getColumnValue(item, col)}
-													{#if col.type === 'number'}
-														<span class="font-mono text-[13px] text-slate-50">
-															{Number(raw).toLocaleString()}{col.suffix ?? ''}
-														</span>
-													{:else if col.type === 'buttons' && col.buttons?.length}
-														<div class="flex flex-wrap items-center gap-2">
-															{#each col.buttons as btn, bIdx (bIdx)}
-																<CWButton
-																	class={`${btn.class ?? ''}`}
-																	variant={btn.variant}
-																	onclick={() => btn.onClick?.(item)}
-																>
-																	{btn.label}
-																</CWButton>
-															{/each}
-														</div>
-													{:else}
-														<span class="text-slate-50">
-															{raw}{col.suffix ?? ''}
-														</span>
-													{/if}
 												{/if}
-											</svelte:element>
-										</td>
-									{/each}
-									{#if actions}
-										<td class="whitespace-nowrap px-2 md:px-3 align-middle text-right" data-label="Actions">
-											{@render actions(item, (page - 1) * pageSize + idx, tableContext)}
+											</td>
+										{/each}
+										{#if actions}
+											<td class="whitespace-nowrap px-2 md:px-3 align-middle text-right" data-label="Actions">
+												{@render actions(item, (page - 1) * pageSize + idx, tableContext)}
 										</td>
 									{/if}
 								{:else}
@@ -885,12 +1159,12 @@
 		{/if}
 	</div>
 	<div
-		class="mt-auto flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-4 py-3 text-[15px] text-slate-200 sm:flex-row sm:items-center sm:justify-between"
+		class="mt-auto flex flex-col gap-3 border-t border-slate-800 bg-slate-950/60 px-4 py-3 text-xs sm:text-sm text-slate-200 sm:flex-row sm:items-center sm:justify-between"
 	>
-		<div class="flex items-center gap-2">
+		<div class="flex items-center justify-center gap-2 sm:justify-start">
 			<button
 				type="button"
-				class="rounded-md bg-slate-900 px-2 py-1 text-slate-200 ring-1 ring-slate-700 transition enabled:hover:bg-slate-800 disabled:opacity-50"
+				class="rounded-md bg-slate-900 px-3 py-1.5 text-slate-200 ring-1 ring-slate-700 transition enabled:hover:bg-slate-800 disabled:opacity-50"
 				onclick={prevPage}
 				disabled={page === 1 || virtual}
 			>
@@ -901,7 +1175,7 @@
 			</span>
 			<button
 				type="button"
-				class="rounded-md bg-slate-900 px-2 py-1 text-slate-200 ring-1 ring-slate-700 transition enabled:hover:bg-slate-800 disabled:opacity-50"
+				class="rounded-md bg-slate-900 px-3 py-1.5 text-slate-200 ring-1 ring-slate-700 transition enabled:hover:bg-slate-800 disabled:opacity-50"
 				onclick={nextPage}
 				disabled={page === pageCount || virtual}
 			>
@@ -909,8 +1183,10 @@
 			</button>
 		</div>
 
-		<div class="text-[11px] text-slate-400">
-			{#if virtual}
+		<div class="text-[11px] text-center sm:text-right text-slate-400">
+			{#if isMobile}
+				<span>Showing {visibleStart}–{visibleEnd} of {total}</span>
+			{:else if virtual}
 				<span>Virtualized list • {total} rows</span>
 			{:else}
 				<span>
@@ -922,48 +1198,204 @@
 </div>
 
 <style>
-	:global(.cw-table) {
-		font-size: inherit;
-	}
-
-	:global(.cw-table *) {
-		font-size: inherit;
-	}
-
+	/* Mobile card view - completely rewritten for proper card layout */
 	@media (max-width: 640px) {
+		:global(.cw-table .virtual-toggle) {
+			display: none !important;
+		}
+
+		/* Make the main container allow proper flex sizing */
+		:global(.cw-table) {
+			display: flex !important;
+			flex-direction: column !important;
+			height: 100% !important;
+			max-height: 100% !important;
+			overflow: hidden !important;
+		}
+
+		/* The flex-1 wrapper should take remaining space */
+		:global(.cw-table > .flex-1) {
+			flex: 1 1 0% !important;
+			min-height: 0 !important;
+			overflow: hidden !important;
+		}
+
+		/* Make the scroller scrollable on mobile - this is critical for touch scrolling */
+		:global(.cw-table .mobile-scroll-container) {
+			overflow-y: auto !important;
+			overflow-x: hidden !important;
+			-webkit-overflow-scrolling: touch !important;
+			overscroll-behavior: contain !important;
+			flex: 1 !important;
+			display: block !important;
+			height: auto !important;
+			max-height: 100% !important;
+		}
+
+		/* Hide the table header on mobile */
 		:global(.cw-table thead) {
-			display: none;
+			display: none !important;
 		}
 
+		/* Convert table to block display */
+		:global(.cw-table table) {
+			display: block !important;
+			font-size: 0.8125rem !important;
+			width: 100% !important;
+		}
+
+		/* tbody as flex column for cards */
+		:global(.cw-table tbody) {
+			display: flex !important;
+			flex-direction: column !important;
+			gap: 0.75rem !important;
+			padding: 0.75rem !important;
+		}
+
+		/* Each row becomes a card */
 		:global(.cw-table tbody tr:not(.spacer-row)) {
-			display: flex;
-			flex-direction: column;
-			gap: 0.35rem;
-			margin-bottom: 1rem;
-			border: 1px solid rgb(30 41 59 / 0.6);
-			border-radius: 0.9rem;
-			background: rgba(15, 23, 42, 0.9);
-			padding: 0.85rem 1rem;
+			display: flex !important;
+			flex-direction: column !important;
+			gap: 0 !important;
+			border: 1px solid rgb(51 65 85 / 0.8) !important;
+			border-radius: 0.75rem !important;
+			background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98)) !important;
+			padding: 0 !important;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+			overflow: hidden !important;
 		}
 
+		:global(.cw-table tbody tr:not(.spacer-row):hover) {
+			border-color: rgb(56 189 248 / 0.5) !important;
+		}
+
+		/* Each cell as a row in the card */
 		:global(.cw-table tbody tr:not(.spacer-row) td) {
-			display: flex;
-			justify-content: space-between;
-			gap: 1rem;
-			padding: 0.25rem 0;
-			border: none;
+			display: flex !important;
+			flex-direction: row !important;
+			align-items: center !important;
+			justify-content: space-between !important;
+			gap: 1rem !important;
+			padding: 0.625rem 1rem !important;
+			border: none !important;
+			border-bottom: 1px solid rgb(51 65 85 / 0.4) !important;
+			background: transparent !important;
+			min-height: 2.5rem !important;
 		}
 
+		:global(.cw-table tbody tr:not(.spacer-row) td:last-child) {
+			border-bottom: none !important;
+		}
+
+		/* Label before each cell value */
 		:global(.cw-table tbody tr:not(.spacer-row) td::before) {
-			content: attr(data-label);
-			text-transform: uppercase;
-			font-size: 0.65rem;
-			letter-spacing: 0.08em;
-			color: rgb(148 163 184 / 0.8);
+			content: attr(data-label) !important;
+			display: block !important;
+			flex-shrink: 0 !important;
+			min-width: 6rem !important;
+			max-width: 7rem !important;
+			text-transform: uppercase !important;
+			font-size: 0.625rem !important;
+			font-weight: 700 !important;
+			letter-spacing: 0.06em !important;
+			color: rgb(148 163 184) !important;
+			line-height: 1.4 !important;
 		}
 
-		:global(.cw-table tbody tr:not(.spacer-row) td > :where(span, div)) {
-			text-align: right;
+		/* Cell content wrapper - the div or anchor inside td */
+		:global(.cw-table tbody tr:not(.spacer-row) td > a),
+		:global(.cw-table tbody tr:not(.spacer-row) td > div) {
+			flex: 1 !important;
+			display: flex !important;
+			justify-content: flex-end !important;
+			align-items: center !important;
+			text-align: right !important;
+			word-break: break-word !important;
+			min-width: 0 !important;
+		}
+
+		/* Text spans should also align right */
+		:global(.cw-table tbody tr:not(.spacer-row) td span) {
+			text-align: right !important;
+		}
+
+		/* Stacked columns (name + secondary text) */
+		:global(.cw-table tbody tr:not(.spacer-row) td .flex.flex-col) {
+			align-items: flex-end !important;
+			text-align: right !important;
+		}
+
+		/* Badge containers */
+		:global(.cw-table tbody tr:not(.spacer-row) td .flex.items-center) {
+			justify-content: flex-end !important;
+		}
+
+		/* Button containers in cells */
+		:global(.cw-table tbody tr:not(.spacer-row) td .flex.flex-wrap) {
+			justify-content: flex-end !important;
+			width: 100% !important;
+		}
+
+		/* Actions row - special styling */
+		:global(.cw-table tbody tr:not(.spacer-row) td[data-label="Actions"]) {
+			background: rgba(15, 23, 42, 0.6) !important;
+			padding: 0.75rem 1rem !important;
+			border-top: 1px solid rgb(51 65 85 / 0.6) !important;
+			border-bottom: none !important;
+		}
+
+		:global(.cw-table tbody tr:not(.spacer-row) td[data-label="Actions"]::before) {
+			display: none !important;
+		}
+
+		:global(.cw-table tbody tr:not(.spacer-row) td[data-label="Actions"] > div) {
+			width: 100% !important;
+			justify-content: center !important;
+		}
+
+		/* Spacer rows should be hidden */
+		:global(.cw-table tbody tr.spacer-row) {
+			display: none !important;
+		}
+	}
+
+	/* Tablet adjustments (641px - 1024px) */
+	@media (min-width: 641px) and (max-width: 1024px) {
+		:global(.cw-table table) {
+			font-size: 0.75rem;
+		}
+
+		:global(.cw-table th),
+		:global(.cw-table td) {
+			padding: 0.5rem 0.625rem;
+		}
+	}
+
+	/* Desktop - ensure proper table display */
+	@media (min-width: 641px) {
+		:global(.cw-table table) {
+			display: table;
+		}
+
+		:global(.cw-table thead) {
+			display: table-header-group;
+		}
+
+		:global(.cw-table tbody) {
+			display: table-row-group;
+		}
+
+		:global(.cw-table tr) {
+			display: table-row;
+		}
+
+		:global(.cw-table th),
+		:global(.cw-table td) {
+			display: table-cell;
+		}
+
+		:global(.cw-table tbody tr td::before) {
+			display: none !important;
 		}
 	}
 </style>

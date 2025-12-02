@@ -5,6 +5,7 @@
 	import CWButton from '$lib/components/CWButton.svelte';
 	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWDevEuiInput from '$lib/components/CWDevEuiInput.svelte';
+	import CWSelect from '$lib/components/CWSelect.svelte';
 
 	// Get data from server
 	let { data, form } = $props();
@@ -58,11 +59,11 @@
 	// Get the count of active location users for the checkbox description
 	const locationUserCount = $derived(data.locationUsers?.length ?? 0);
 
-	// Format device type options
+	// Format device type options for CWSelect
 	const deviceTypeOptions = $derived(
 		(data.deviceTypes ?? []).map(
 			(dt: { id: number; name: string; manufacturer: string | null; model: string | null; TTI_application_id: string | null }) => ({
-				id: dt.id,
+				value: dt.id.toString(),
 				label: dt.manufacturer && dt.model ? `${dt.name} (${dt.manufacturer} ${dt.model})` : dt.name,
 				ttiApplicationId: dt.TTI_application_id
 			})
@@ -71,7 +72,7 @@
 
 	// Get selected device type label for review
 	const selectedDeviceTypeLabel = $derived(
-		deviceTypeOptions.find((dt: { id: number; label: string }) => dt.id.toString() === deviceType)
+		deviceTypeOptions.find((dt: { value: string; label: string }) => dt.value === deviceType)
 			?.label ?? 'Not selected'
 	);
 
@@ -432,23 +433,16 @@
 						</div>
 
 						<!-- Device Type -->
-						<div>
-							<label for="device_type" class="mb-1.5 block text-sm font-medium text-slate-300">
-								Device Type <span class="text-red-400">*</span>
-								<span class="ml-1 text-xs text-slate-500">(required for TTI verification)</span>
-							</label>
-							<select
-								id="device_type"
-								name="device_type"
-								bind:value={deviceType}
-								class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-100 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-							>
-								<option value="">Select a device type...</option>
-								{#each deviceTypeOptions as option (option.id)}
-									<option value={option.id}>{option.label}</option>
-								{/each}
-							</select>
-						</div>
+						<CWSelect
+							bind:value={deviceType}
+							options={deviceTypeOptions}
+							label="Device Type"
+							required
+							requiredHint="required for TTI verification"
+							placeholder="Select a device type..."
+							name="device_type"
+							id="device_type"
+						/>
 
 						<!-- Prior Registration Check -->
 						<div class="rounded-xl border border-slate-700/50 bg-slate-800/30 p-4">

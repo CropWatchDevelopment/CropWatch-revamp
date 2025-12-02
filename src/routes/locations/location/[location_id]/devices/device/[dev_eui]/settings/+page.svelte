@@ -12,7 +12,16 @@
 	import DOWNLOAD_ICON from '$lib/images/icons/download.svg';
 	import SAVE_ICON from '$lib/images/icons/save.svg';
 	import CWCopy from '$lib/components/CWCopy.svelte';
-	import CWPermissionRowItem from '$lib/components/CWPermissionRowItem.svelte';
+	import CWPermissionRowItem, { type PermissionUser } from '$lib/components/CWPermissionRowItem.svelte';
+	import type { SupabaseClient } from '@supabase/supabase-js';
+
+	interface Props {
+		data: {
+			supabase: SupabaseClient;
+		};
+	}
+
+	let { data }: Props = $props();
 
 	const getAppState = getContext<() => AppState>('appState');
 	let appState = $derived(getAppState());
@@ -73,12 +82,15 @@
 		nextCalibration: '2025-06-01'
 	});
 
-	// Mock user permissions
-	let permissions = $state([
-		{ id: '1', name: 'John Smith', email: 'john@example.com', role: 'owner', avatar: 'JS' },
-		{ id: '2', name: 'Sarah Connor', email: 'sarah@example.com', role: 'admin', avatar: 'SC' },
-		{ id: '3', name: 'Mike Wilson', email: 'mike@example.com', role: 'viewer', avatar: 'MW' }
+	// Mock user permissions - using PermissionUser interface
+	let permissions = $state<PermissionUser[]>([
+		{ id: '1', user_id: 'u1', full_name: 'John Smith', email: 'john@example.com', permission_level: 4, avatar_url: null },
+		{ id: '2', user_id: 'u2', full_name: 'Sarah Connor', email: 'sarah@example.com', permission_level: 3, avatar_url: null },
+		{ id: '3', user_id: 'u3', full_name: 'Mike Wilson', email: 'mike@example.com', permission_level: 1, avatar_url: null }
 	]);
+
+	// Owner user (first user in mock data)
+	const ownerId = 'u1';
 
 	const roleColors: Record<string, string> = {
 		owner: 'bg-purple-500/20 text-purple-300 ring-purple-500/30',
@@ -199,12 +211,18 @@
 					{#each permissions as user (user.id)}
 						<CWPermissionRowItem
 							{user}
-							badgeClass={roleColors[user.role]}
-							permissionName={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+							supabase={data.supabase}
+							isOwner={user.user_id === ownerId}
 							inlineEdit={true}
-							canEdit={true}
-							onUpdate={(updatedUser) => {
-								permissions = permissions.map((u) => (u.id === updatedUser.id ? updatedUser : u));
+							canEdit={user.user_id !== ownerId}
+							canRemove={user.user_id !== ownerId}
+							onPermissionChange={async (u, newLevel) => {
+								permissions = permissions.map((p) => 
+									p.id === u.id ? { ...p, permission_level: newLevel } : p
+								);
+							}}
+							onRemove={(u) => {
+								permissions = permissions.filter((p) => p.id !== u.id);
 							}}
 						/>
 					{/each}

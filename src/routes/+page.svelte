@@ -110,6 +110,7 @@
 
 	const total = $derived(filteredDevices?.length);
 	const alerts = $derived(filteredAlerts?.length);
+	const activeAlerts = $derived(filteredAlerts?.filter((a: Alert) => a.is_triggered).length);
 	const offline = $derived(filteredDevices?.filter((d: Device) => d.status === 'offline').length);
 	const statusCounts = $derived.by(() => {
 		const counts: Record<DeviceStatus, number> = {
@@ -312,8 +313,8 @@
 						<span>devices in view</span>
 					</span>
 					<span class="flex items-center gap-1 text-amber-200">
-						<span class="font-mono">{alerts}</span>
-						<span>with alerts</span>
+						<span class="font-mono">{activeAlerts}</span>
+						<span>with active alerts</span>
 					</span>
 					<span class="flex items-center gap-1 text-rose-300">
 						<span class="font-mono">{offline}</span>
@@ -322,7 +323,7 @@
 				</div>
 				<span class="flex flex-1"></span>
 				<div id="Dashboard__Overview__actions" class="flex items-center gap-3">
-					<CWPill value={3} color="error" pulse position="bottom-right">
+					<CWPill value={activeAlerts} color="error" pulse position="bottom-right">
 						<CWButton
 							variant="secondary"
 							size="sm"

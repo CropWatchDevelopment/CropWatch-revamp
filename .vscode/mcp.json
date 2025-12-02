@@ -1,7 +1,13 @@
 {
 	"servers": {
 		"svelte": {
-			"url": "https://mcp.svelte.dev/mcp"
+			"url": "https://mcp.svelte.dev/mcp",
+			"type": "http"
+		},
+		"stripe": {
+			"type": "http",
+			"url": "https://mcp.stripe.com"
 		}
-	}
+	},
+	"inputs": []
 }

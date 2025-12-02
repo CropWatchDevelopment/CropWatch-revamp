@@ -1,5 +1,7 @@
 <script lang="ts">
 	import CWButton from './CWButton.svelte';
+	import Avatar from './Avatar.svelte';
+	import type { SupabaseClient } from '@supabase/supabase-js';
 
 	/**
 	 * Permission level configuration matching cw_permission_level_types table
@@ -26,6 +28,8 @@
 	interface Props {
 		/** The user with permission data */
 		user: PermissionUser;
+		/** Supabase client for avatar storage access */
+		supabase: SupabaseClient;
 		/** Available permission levels */
 		permissionLevels?: PermissionLevel[];
 		/** Whether this user is the owner (cannot be edited/removed) */
@@ -48,6 +52,7 @@
 
 	let {
 		user,
+		supabase,
 		permissionLevels = [
 			{ id: 1, name: 'Admin' },
 			{ id: 2, name: 'Editor' },
@@ -124,19 +129,12 @@
 	<div class="flex items-center gap-3 min-w-0">
 		<!-- Avatar -->
 		<div class="flex-shrink-0">
-			{#if user.avatar_url}
-				<img
-					src={user.avatar_url}
-					alt={user.full_name}
-					class="h-10 w-10 rounded-full object-cover"
-				/>
-			{:else}
-				<div
-					class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-purple-500 text-sm font-semibold text-white"
-				>
-					{avatarInitials}
-				</div>
-			{/if}
+			<Avatar
+				size="md"
+				avatarUrl={user.avatar_url}
+				initials={avatarInitials}
+				{supabase}
+			/>
 		</div>
 
 		<!-- Name & Email -->

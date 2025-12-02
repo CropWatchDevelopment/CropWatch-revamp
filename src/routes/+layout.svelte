@@ -7,11 +7,26 @@
 	import './layout.css';
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import { createAppState, provideAppState, useAppState } from '$lib/data/AppState.svelte';
-	import { setContext } from 'svelte';
-	import type { LayoutProps } from './$types';
+	import { setContext, type Snippet } from 'svelte';
 	import { CWToastContainer, createToastContext } from '$lib/components/toast';
+	import { invalidate } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import type { SupabaseClient, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
-	let { data, supabase, children } = $props<LayoutProps>();
+	interface Props {
+		data: {
+			supabase: SupabaseClient;
+			session: Session | null;
+			facilities: Facility[];
+			locations: Location[];
+			devices: Device[];
+			alerts: any[];
+			isLoggedIn: boolean;
+		};
+		children: Snippet;
+	}
+
+	let { data, children }: Props = $props();
 
 	// Create toast context so all child components can use it
 	createToastContext();
@@ -30,6 +45,17 @@
 		appState.devices = data.devices;
 		appState.alerts = data.alerts;
 		appState.isLoggedIn = data.isLoggedIn ?? false;
+	});
+
+	// Listen for auth state changes and invalidate to refresh data
+	onMount(() => {
+		const { data: { subscription } } = data.supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+			if (session?.expires_at !== data.session?.expires_at) {
+				invalidate('supabase:auth');
+			}
+		});
+
+		return () => subscription.unsubscribe();
 	});
 
 	provideAppState(appState);

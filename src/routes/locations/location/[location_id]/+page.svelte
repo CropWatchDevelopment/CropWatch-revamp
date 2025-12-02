@@ -485,7 +485,7 @@
 				<div class="flex items-center gap-3">
 					<CWBackButton fallback="/locations" />
 					<div>
-						<h1 class="text-2xl font-bold text-slate-100">{locationName}</h1>
+						<h1 class="text-2xl font-bold text-slate-100">{locationName} Location Detail</h1>
 						<p class="mt-1 text-sm text-slate-400">{locationDescription}</p>
 					</div>
 				</div>

@@ -7,18 +7,45 @@
 	import logo from '$lib/images/cropwatch_static.svg';
 	import LOCK_ICON from '$lib/images/icons/lock.svg';
 	import LOGOUT_ICON from '$lib/images/icons/logout.svg';
+	import ACCOUNT_CIRCLE_ICON from '$lib/images/icons/account_circle.svg';
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import { getContext } from 'svelte';
 	import { getToastContext } from '$lib/components/toast';
+	import Avatar from '$lib/components/Avatar.svelte';
 
 	const toast = getToastContext();
 
 	const getAppState = getContext<() => AppState>('appState');
 	let appState = $derived(getAppState());
+	let avatarUrl = $state(appState.user?.avatar_url ?? '');
 
 	let { isLoggedIn } = $props<{
 		isLoggedIn: boolean;
 	}>();
+
+	let accountMenuOpen = $state(false);
+	let accountMenuRef: HTMLDivElement | null = $state(null);
+
+	function toggleAccountMenu() {
+		accountMenuOpen = !accountMenuOpen;
+	}
+
+	function closeAccountMenu() {
+		accountMenuOpen = false;
+	}
+
+	function handleClickOutside(event: MouseEvent) {
+		if (accountMenuRef && !accountMenuRef.contains(event.target as Node)) {
+			closeAccountMenu();
+		}
+	}
+
+	$effect(() => {
+		if (accountMenuOpen) {
+			document.addEventListener('click', handleClickOutside);
+			return () => document.removeEventListener('click', handleClickOutside);
+		}
+	});
 
 	function toggleSidebar() {
 		if (typeof window === 'undefined') return;
@@ -210,7 +237,37 @@
 
 		<!-- Right: Actions -->
 		{#if isLoggedIn}
-			<div class="flex items-center">
+			<div class="flex items-center gap-3">
+				<!-- Account Menu Dropdown -->
+				<div class="relative" bind:this={accountMenuRef}>
+					<CWButton variant="ghost" size="sm" onclick={toggleAccountMenu}>
+						<img src={ACCOUNT_CIRCLE_ICON} alt="Account" class="h-6 w-6" />
+					</CWButton>
+
+					{#if accountMenuOpen}
+						<div
+							class="absolute right-0 top-full z-50 mt-2 w-48 origin-top-right rounded-xl border border-slate-700 bg-slate-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5"
+						>
+							<a
+								href={resolve('/account')}
+								onclick={closeAccountMenu}
+								class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 transition hover:bg-slate-700 hover:text-white"
+							>
+								<Avatar
+									size="24"
+									sourceUrl={appState.user?.avatar_url || null}
+									initials={appState.user
+										? `${appState.user.first_name?.charAt(0) || ''}${
+												appState.user.last_name?.charAt(0) || ''
+											}`
+										: ''}
+								/>
+								Account Settings
+							</a>
+						</div>
+					{/if}
+				</div>
+
 				<CWButton variant="secondary" size="sm" onclick={() => (logoutDialog = true)}>
 					<svg
 						class="h-4 w-4"

@@ -1,5 +1,5 @@
 import { PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY, PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../../database.types';
 import type { AppState } from '$lib/Interfaces/appState.interface';
 import type { Device } from '$lib/Interfaces/device.interface';
@@ -23,30 +23,50 @@ type DeviceJoined = DeviceRow & {
 
 type AuthSession = { access_token: string; refresh_token: string };
 
-async function createSupabaseClient(session?: AuthSession) {
+// Singleton client instance to avoid multiple GoTrueClient instances
+let supabaseClientInstance: SupabaseClient<Database> | null = null;
+let currentSessionTokens: { access_token: string; refresh_token: string } | null = null;
+
+async function createSupabaseClient(session?: AuthSession): Promise<SupabaseClient<Database>> {
 	if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) {
 		throw new Error('Supabase environment variables are not set.');
 	}
 
-	const client = createClient<Database>(
-		PUBLIC_SUPABASE_URL,
-		PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
-		{
-			auth: {
-				autoRefreshToken: false,
-				persistSession: false
-			}
-		}
+	// Check if we can reuse the existing client
+	const sessionChanged = session && currentSessionTokens && (
+		session.access_token !== currentSessionTokens.access_token ||
+		session.refresh_token !== currentSessionTokens.refresh_token
 	);
 
+	// Reuse existing client if no session change
+	if (supabaseClientInstance && !sessionChanged && (!session || currentSessionTokens)) {
+		return supabaseClientInstance;
+	}
+
+	// Create a new client only if needed
+	if (!supabaseClientInstance) {
+		supabaseClientInstance = createClient<Database>(
+			PUBLIC_SUPABASE_URL,
+			PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
+			{
+				auth: {
+					autoRefreshToken: false,
+					persistSession: false
+				}
+			}
+		);
+	}
+
+	// Update session if provided
 	if (session?.access_token && session?.refresh_token) {
-		await client.auth.setSession({
+		await supabaseClientInstance.auth.setSession({
 			access_token: session.access_token,
 			refresh_token: session.refresh_token
 		});
+		currentSessionTokens = { ...session };
 	}
 
-	return client;
+	return supabaseClientInstance;
 }
 
 const fToC = (value: number | null) => (value == null ? null : (value - 32) / 1.8);
@@ -162,7 +182,7 @@ type CachedLocation = {
 };
 
 async function fetchDeviceType(
-	client: ReturnType<typeof createSupabaseClient>,
+	client: SupabaseClient<Database>,
 	typeId: number,
 	cache: Map<number, DeviceTypeRow>
 ) {
@@ -178,7 +198,7 @@ async function fetchDeviceType(
 }
 
 async function fetchLocation(
-	client: ReturnType<typeof createSupabaseClient>,
+	client: SupabaseClient<Database>,
 	locationId: number,
 	cache: Map<number, LocationRow>
 ) {
@@ -197,8 +217,8 @@ async function fetchLocation(
  * Subscribe to realtime inserts/updates on cw_devices and merge into appState.devices.
  * Returns an unsubscribe function.
  */
-export async function startDeviceRealtime(appState: AppStateState) {
-	const supabase = await createSupabaseClient();
+export async function startDeviceRealtime(appState: AppStateState, session?: AuthSession) {
+	const supabase = await createSupabaseClient(session);
 	const typeCache = new Map<number, DeviceTypeRow>();
 	const locationCache = new Map<number, LocationRow>();
 
@@ -227,7 +247,7 @@ export async function startDeviceRealtime(appState: AppStateState) {
 
 async function handlePayload(
 	payload: { new: Record<string, unknown> },
-	client: ReturnType<typeof createSupabaseClient>,
+	client: SupabaseClient<Database>,
 	appState: AppStateState,
 	typeCache: Map<number, DeviceTypeRow>,
 	locationCache: Map<number, LocationRow>
