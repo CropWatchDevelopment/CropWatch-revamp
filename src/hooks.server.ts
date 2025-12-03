@@ -1,9 +1,11 @@
+import {sequence} from '@sveltejs/kit/hooks';
+import * as Sentry from '@sentry/sveltekit';
 // src/hooks.server.ts
 import { createServerClient } from '@supabase/ssr';
 import { type Handle, redirect } from '@sveltejs/kit';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY } from '$env/static/public';
 
-export const handle: Handle = async ({ event, resolve }) => {
+export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
 	// Create a Supabase client for this request, with cookie auth enabled
 	event.locals.supabase = createServerClient(
 		PUBLIC_SUPABASE_URL,
@@ -64,4 +66,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return name === 'content-range' || name === 'x-supabase-api-version';
 		}
 	});
-};
+});
+export const handleError = Sentry.handleErrorWithSentry();

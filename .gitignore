@@ -29,3 +29,5 @@ supabase/.supabase/
 supabase/.supabase_config.json
 supabase/functions/**/node_modules/
 supabase/config.toml
+# Sentry Config File
+.env.sentry-build-plugin

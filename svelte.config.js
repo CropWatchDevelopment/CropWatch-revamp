@@ -3,15 +3,27 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	// Consult https://svelte.dev/docs/kit/integrations
-	// for more information about preprocessors
-	preprocess: vitePreprocess(),
-	kit: { adapter: adapter() },
-	vitePlugin: {
-		inspector: {
-			toggleKeyCombo: 'alt-x'
-		}
-	}
+				// Consult https://svelte.dev/docs/kit/integrations
+				// for more information about preprocessors
+				preprocess: vitePreprocess(),
+				kit: {
+				 adapter: adapter(),
+
+				 experimental: {
+					 tracing: {
+						 server: true
+						},
+
+					 instrumentation: {
+						 server: true
+						}
+					}
+				},
+				vitePlugin: {
+								inspector: {
+												toggleKeyCombo: 'alt-x'
+								}
+				}
 };
 
 export default config;
