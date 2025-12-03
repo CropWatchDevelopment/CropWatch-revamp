@@ -319,7 +319,7 @@
 					/>
 				</svg>
 				<p class="text-slate-400">No gateways to display</p>
-				<p class="mt-1 text-sm text-slate-500">Add a gateway to see the network topology.</p>
+				<p class="mt-1 text-sm text-slate-400">Add a gateway to see the network topology.</p>
 			</div>
 		</div>
 	{/if}

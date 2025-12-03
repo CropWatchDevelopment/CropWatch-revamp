@@ -151,7 +151,7 @@
 				</svg>
 				<input
 					bind:value={search}
-					class="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-slate-500"
+					class="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-slate-400"
 					placeholder="Search facility, location, device…"
 				/>
 			</div>
@@ -180,7 +180,7 @@
 							</span>
 							<span>All facilities</span>
 						</span>
-						<span class="text-xs text-slate-500">{devices?.length}</span>
+						<span class="text-xs text-slate-400">{devices?.length}</span>
 					</button>
 
 					{#each facilities as f (f.id)}
@@ -203,7 +203,7 @@
 								</span>
 								<span class="truncate" title={f.name}>{f.name}</span>
 							</span>
-							<span class="flex items-center gap-1 text-xs text-slate-500">
+							<span class="flex items-center gap-1 text-xs text-slate-400">
 								{#if hasAlert}
 									<span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
 								{/if}
@@ -233,7 +233,7 @@
 								/>
 								All locations
 							</span>
-							<span class="text-xs text-slate-500">{devices?.length}</span>
+							<span class="text-xs text-slate-400">{devices?.length}</span>
 						</button>
 						<button
 							class="hidden group-hover:flex px-1 text-slate-400 hover:text-slate-200"
@@ -256,7 +256,7 @@
 									<img src={LOCATION_ICON} alt="Location icon" class="inline-block h-4 w-4 mr-1" />
 									{loc.name}
 								</span>
-								<span class="flex items-center gap-1 text-xs text-slate-500">
+								<span class="flex items-center gap-1 text-xs text-slate-400">
 									{#if hasAlert}
 										<span class="inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
 									{/if}
@@ -276,7 +276,7 @@
 		</div>
 
 		<!-- Stats Footer -->
-		<div class="mt-auto space-y-2 border-t border-slate-800 pt-3 text-xs text-slate-500">
+		<div class="mt-auto space-y-2 border-t border-slate-800 pt-3 text-xs text-slate-400">
 			<div class="flex items-center justify-between">
 				<span>Total in view</span>
 				<span class="font-mono text-slate-200">{total}</span>

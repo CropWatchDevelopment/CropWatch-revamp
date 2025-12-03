@@ -86,7 +86,7 @@
 				<span class="text-red-400">*</span>
 			{/if}
 			{#if requiredHint}
-				<span class="ml-1 text-xs text-slate-500">({requiredHint})</span>
+				<span class="ml-1 text-xs text-slate-400">({requiredHint})</span>
 			{/if}
 		</label>
 	{/if}
@@ -171,7 +171,7 @@
 	{#if error}
 		<p id="{selectId}-error" class="text-sm text-red-400">{error}</p>
 	{:else if helpText}
-		<p id="{selectId}-help" class="text-sm text-slate-500">{helpText}</p>
+		<p id="{selectId}-help" class="text-sm text-slate-400">{helpText}</p>
 	{/if}
 </div>
 

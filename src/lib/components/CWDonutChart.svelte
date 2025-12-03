@@ -212,7 +212,7 @@
 					<span class="text-slate-300">{segment.label}</span>
 					<span class="font-mono text-slate-400">
 						{segment.value}
-						<span class="text-slate-500">({(segment.percentage * 100).toFixed(0)}%)</span>
+						<span class="text-slate-400">({(segment.percentage * 100).toFixed(0)}%)</span>
 					</span>
 				</button>
 			{/each}

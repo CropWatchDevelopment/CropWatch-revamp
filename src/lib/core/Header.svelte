@@ -93,7 +93,7 @@
 			</button>
 
 			<a href="/" class="flex items-center gap-3 transition hover:opacity-80">
-				<img src={logo} alt="CropWatch" class="h-8 w-8" />
+				<img src={logo} alt="Company Tree Logo" class="h-8 w-8" />
 				<span class="hidden text-lg font-semibold tracking-tight text-white sm:inline"
 					>CropWatch</span
 				>

@@ -244,7 +244,7 @@
 									? 'border-sky-500 bg-sky-500/20 text-sky-400'
 									: currentStep > step.id
 										? 'border-sky-500 bg-sky-500 text-white'
-										: 'border-slate-700 bg-slate-800 text-slate-500'}"
+										: 'border-slate-700 bg-slate-800 text-slate-400'}"
 							>
 								{#if currentStep > step.id}
 									<svg
@@ -315,7 +315,7 @@
 						<span
 							class="text-xs font-medium {currentStep === step.id
 								? 'text-sky-400'
-								: 'text-slate-500'}">{step.title}</span
+								: 'text-slate-400'}">{step.title}</span
 						>
 					</button>
 				{/each}
@@ -431,7 +431,7 @@
 									</div>
 								{/if}
 							</div>
-							<p class="mt-1.5 text-xs text-slate-500">
+							<p class="mt-1.5 text-xs text-slate-400">
 								Give your device a memorable name to easily identify it later
 							</p>
 						</div>
@@ -475,7 +475,7 @@
 									Check Registration
 								</CWButton>
 								{#if !isDevEuiValid}
-									<p class="mt-2 text-xs text-slate-500">Enter a valid DevEUI first.</p>
+									<p class="mt-2 text-xs text-slate-400">Enter a valid DevEUI first.</p>
 								{/if}
 
 							{:else if dbCheckState === 'checking'}
@@ -615,7 +615,7 @@
 									Verify Device in TTI
 								</CWButton>
 								{#if !isDevEuiValid || !deviceType}
-									<p class="mt-2 text-xs text-slate-500">
+									<p class="mt-2 text-xs text-slate-400">
 										{#if !isDevEuiValid}
 											Enter a valid DevEUI first.
 										{:else if !deviceType}
@@ -740,7 +740,7 @@
 							<span class="text-sm font-medium text-slate-400">Advanced Options</span>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
-								class="h-5 w-5 text-slate-500 transition-transform {showAdvancedOptions
+								class="h-5 w-5 text-slate-400 transition-transform {showAdvancedOptions
 									? 'rotate-180'
 									: ''}"
 								fill="none"
@@ -937,7 +937,7 @@
 											<p class="truncate text-sm font-medium text-slate-200">
 												{profile?.full_name ?? 'Unknown'}
 											</p>
-											<p class="truncate text-xs text-slate-500">{profile?.email ?? ''}</p>
+											<p class="truncate text-xs text-slate-400">{profile?.email ?? ''}</p>
 										</div>
 										<span
 											class="rounded-full border border-slate-600 bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400"
@@ -1025,19 +1025,19 @@
 							</div>
 							<div class="space-y-3">
 								<div class="flex items-center justify-between">
-									<span class="text-sm text-slate-500">Device EUI</span>
+									<span class="text-sm text-slate-400">Device EUI</span>
 									<span class="font-mono text-sm font-medium text-slate-200">{devEui}</span>
 								</div>
 								<div class="flex items-center justify-between">
-									<span class="text-sm text-slate-500">Device Name</span>
+									<span class="text-sm text-slate-400">Device Name</span>
 									<span class="text-sm font-medium text-slate-200">{deviceName}</span>
 								</div>
 								<div class="flex items-center justify-between">
-									<span class="text-sm text-slate-500">Device Type</span>
+									<span class="text-sm text-slate-400">Device Type</span>
 									<span class="text-sm text-slate-200">{selectedDeviceTypeLabel}</span>
 								</div>
 								<div class="flex items-center justify-between">
-									<span class="text-sm text-slate-500">Prior Registration</span>
+									<span class="text-sm text-slate-400">Prior Registration</span>
 									<div class="flex items-center gap-1.5">
 										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1046,7 +1046,7 @@
 									</div>
 								</div>
 								<div class="flex items-center justify-between">
-									<span class="text-sm text-slate-500">TTI Verification</span>
+									<span class="text-sm text-slate-400">TTI Verification</span>
 									<div class="flex items-center gap-1.5">
 										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1056,13 +1056,13 @@
 								</div>
 								{#if serialNumber}
 									<div class="flex items-center justify-between">
-										<span class="text-sm text-slate-500">Serial Number</span>
+										<span class="text-sm text-slate-400">Serial Number</span>
 										<span class="text-sm text-slate-200">{serialNumber}</span>
 									</div>
 								{/if}
 								{#if sensorSerial}
 									<div class="flex items-center justify-between">
-										<span class="text-sm text-slate-500">Sensor Serial</span>
+										<span class="text-sm text-slate-400">Sensor Serial</span>
 										<span class="text-sm text-slate-200">{sensorSerial}</span>
 									</div>
 								{/if}
@@ -1101,7 +1101,7 @@
 									</div>
 									<div>
 										<p class="text-sm font-medium text-slate-200">Shared with location users</p>
-										<p class="text-xs text-slate-500">
+										<p class="text-xs text-slate-400">
 											{locationUserCount} user{locationUserCount !== 1 ? 's' : ''} will have access
 										</p>
 									</div>
@@ -1126,7 +1126,7 @@
 									</div>
 									<div>
 										<p class="text-sm font-medium text-slate-200">Private (Owner only)</p>
-										<p class="text-xs text-slate-500">Only you will have access</p>
+										<p class="text-xs text-slate-400">Only you will have access</p>
 									</div>
 								{/if}
 							</div>
@@ -1160,7 +1160,7 @@
 								</svg>
 							</div>
 							<div>
-								<p class="text-xs text-slate-500">Adding to location</p>
+								<p class="text-xs text-slate-400">Adding to location</p>
 								<p class="text-sm font-medium text-slate-200">{data.location?.name ?? 'Unknown'}</p>
 							</div>
 						</div>

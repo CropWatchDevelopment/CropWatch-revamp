@@ -155,7 +155,7 @@
 						name="email"
 						type="email"
 						required
-						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-400 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
 						placeholder="you@example.com"
 						autocomplete="email"
 					/>
@@ -176,7 +176,7 @@
 		</div>
 
 		<!-- Footer -->
-		<p class="mt-6 text-center text-xs text-slate-500">
+		<p class="mt-6 text-center text-xs text-slate-400">
 			Protected by reCAPTCHA and CropWatch Security
 		</p>
 	</div>

@@ -243,7 +243,7 @@
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
-									class="h-8 w-8 text-slate-500"
+									class="h-8 w-8 text-slate-400"
 									fill="none"
 									viewBox="0 0 24 24"
 									stroke="currentColor"
@@ -262,7 +262,7 @@
 								</svg>
 							</div>
 							<p class="text-slate-400">No locations found</p>
-							<p class="mt-1 text-sm text-slate-500">
+							<p class="mt-1 text-sm text-slate-400">
 								Create a location to start monitoring your devices
 							</p>
 							<CWButton
@@ -294,7 +294,7 @@
 							</svg>
 						</div>
 						<p class="text-rose-300 font-medium">Failed to load locations table</p>
-						<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+						<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 						<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 							Try again
 						</button>

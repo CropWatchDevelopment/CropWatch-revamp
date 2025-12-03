@@ -730,7 +730,7 @@
 							<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
-									class="h-8 w-8 text-slate-500"
+									class="h-8 w-8 text-slate-400"
 									fill="none"
 									viewBox="0 0 24 24"
 									stroke="currentColor"
@@ -744,7 +744,7 @@
 								</svg>
 							</div>
 							<p class="text-slate-400">No devices in this location</p>
-							<p class="mt-1 text-sm text-slate-500">Add a device to get started</p>
+							<p class="mt-1 text-sm text-slate-400">Add a device to get started</p>
 						</div>
 					{/snippet}
 				</CWTable>
@@ -756,7 +756,7 @@
 							</svg>
 						</div>
 						<p class="text-rose-300 font-medium">Failed to load devices</p>
-						<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+						<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 						<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 							Try again
 						</button>
@@ -804,7 +804,7 @@
 							<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
-									class="h-8 w-8 text-slate-500"
+									class="h-8 w-8 text-slate-400"
 									fill="none"
 									viewBox="0 0 24 24"
 									stroke="currentColor"
@@ -818,7 +818,7 @@
 								</svg>
 							</div>
 							<p class="text-slate-400">No users have access to this location</p>
-							<p class="mt-1 text-sm text-slate-500">Add a user to grant them access</p>
+							<p class="mt-1 text-sm text-slate-400">Add a user to grant them access</p>
 						</div>
 					{/snippet}
 				</CWTable>
@@ -830,7 +830,7 @@
 							</svg>
 						</div>
 						<p class="text-rose-300 font-medium">Failed to load permissions</p>
-						<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+						<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 						<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 							Try again
 						</button>
@@ -862,7 +862,7 @@
 				</select>
 			</div>
 		{:else}
-			<p class="text-center text-slate-500">No available devices to add.</p>
+			<p class="text-center text-slate-400">No available devices to add.</p>
 		{/if}
 
 		<div class="flex justify-end gap-2 pt-2">

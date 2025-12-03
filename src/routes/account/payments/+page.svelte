@@ -590,7 +590,7 @@
 										</svg>
 									</div>
 									<p class="text-rose-300 font-medium">Failed to load device seats</p>
-									<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+									<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 									<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 										Try again
 									</button>
@@ -601,7 +601,7 @@
 				{:else}
 					<div class="mt-6 rounded-xl border border-slate-800 bg-slate-800/30 py-12 text-center">
 						<div
-							class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700/50 text-slate-500"
+							class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700/50 text-slate-400"
 						>
 							<svg
 								class="h-6 w-6"
@@ -618,7 +618,7 @@
 							</svg>
 						</div>
 						<p class="mt-4 font-medium text-slate-300">No device seats yet</p>
-						<p class="mt-1 text-sm text-slate-500">
+						<p class="mt-1 text-sm text-slate-400">
 							Purchase seats above to start monitoring your devices
 						</p>
 					</div>
@@ -662,7 +662,7 @@
 										</svg>
 									</div>
 									<p class="text-rose-300 font-medium">Failed to load payment history</p>
-									<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+									<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 									<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 										Try again
 									</button>
@@ -673,7 +673,7 @@
 				{:else}
 					<div class="mt-6 rounded-xl border border-slate-800 bg-slate-800/30 py-12 text-center">
 						<div
-							class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700/50 text-slate-500"
+							class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700/50 text-slate-400"
 						>
 							<svg
 								class="h-6 w-6"
@@ -690,7 +690,7 @@
 							</svg>
 						</div>
 						<p class="mt-4 font-medium text-slate-300">No payment history</p>
-						<p class="mt-1 text-sm text-slate-500">
+						<p class="mt-1 text-sm text-slate-400">
 							Your invoices will appear here after your first purchase
 						</p>
 					</div>

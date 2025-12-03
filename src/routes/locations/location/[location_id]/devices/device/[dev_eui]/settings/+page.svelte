@@ -172,7 +172,7 @@
 								<option value={loc.id}>{loc.name}</option>
 							{/each}
 						</select>
-						<p class="mt-1.5 text-xs text-slate-500">
+						<p class="mt-1.5 text-xs text-slate-400">
 							Current: {location?.name ?? 'Unknown'} at {facility?.name ?? 'Unknown Facility'}
 						</p>
 					</div>
@@ -235,7 +235,7 @@
 									</svg>
 								</div>
 								<p class="text-rose-300 font-medium">Failed to load permissions</p>
-								<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+								<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 								<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 									Try again
 								</button>
@@ -445,7 +445,7 @@
 							{formatDate(deviceInfo.warrantyStart)} — {formatDate(deviceInfo.warrantyEnd)}
 						</p>
 						{#if isWarrantyActive(deviceInfo.warrantyEnd)}
-							<p class="mt-1 text-xs text-slate-500">
+							<p class="mt-1 text-xs text-slate-400">
 								{daysUntilExpiry(deviceInfo.warrantyEnd)} days remaining
 							</p>
 						{/if}
@@ -530,7 +530,7 @@
 							<span class="text-sm font-medium text-white">Replacement Batteries</span>
 						</div>
 						<svg
-							class="h-4 w-4 text-slate-500"
+							class="h-4 w-4 text-slate-400"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -569,7 +569,7 @@
 							<span class="text-sm font-medium text-white">Sensor Probes</span>
 						</div>
 						<svg
-							class="h-4 w-4 text-slate-500"
+							class="h-4 w-4 text-slate-400"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -608,7 +608,7 @@
 							<span class="text-sm font-medium text-white">Mounting Hardware</span>
 						</div>
 						<svg
-							class="h-4 w-4 text-slate-500"
+							class="h-4 w-4 text-slate-400"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"

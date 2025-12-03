@@ -221,7 +221,7 @@
 						type="text"
 						required
 						bind:value={fullName}
-						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-400 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
 						placeholder="John Doe"
 						autocomplete="name"
 					/>
@@ -234,7 +234,7 @@
 						name="employer"
 						type="text"
 						bind:value={employer}
-						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-400 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
 						placeholder="CropWatch Inc."
 						autocomplete="organization"
 					/>
@@ -248,7 +248,7 @@
 						type="email"
 						required
 						bind:value={email}
-						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+						class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-400 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
 						placeholder="you@example.com"
 						autocomplete="email"
 					/>
@@ -263,7 +263,7 @@
 							type={showPassword ? 'text' : 'password'}
 							required
 							bind:value={password}
-							class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 pr-12 text-slate-100 placeholder:text-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+							class="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 pr-12 text-slate-100 placeholder:text-slate-400 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
 							placeholder="••••••••"
 							autocomplete="new-password"
 						/>
@@ -288,7 +288,7 @@
 					<!-- Password Requirements -->
 					{#if password.length > 0}
 						<div class="mt-2 space-y-1">
-							<div class="flex items-center gap-2 text-xs {hasMinLength ? 'text-emerald-400' : 'text-slate-500'}">
+							<div class="flex items-center gap-2 text-xs {hasMinLength ? 'text-emerald-400' : 'text-slate-400'}">
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 									{#if hasMinLength}
 										<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -298,7 +298,7 @@
 								</svg>
 								At least 8 characters
 							</div>
-							<div class="flex items-center gap-2 text-xs {hasLowercase ? 'text-emerald-400' : 'text-slate-500'}">
+							<div class="flex items-center gap-2 text-xs {hasLowercase ? 'text-emerald-400' : 'text-slate-400'}">
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 									{#if hasLowercase}
 										<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -308,7 +308,7 @@
 								</svg>
 								One lowercase letter (a-z)
 							</div>
-							<div class="flex items-center gap-2 text-xs {hasUppercase ? 'text-emerald-400' : 'text-slate-500'}">
+							<div class="flex items-center gap-2 text-xs {hasUppercase ? 'text-emerald-400' : 'text-slate-400'}">
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 									{#if hasUppercase}
 										<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -318,7 +318,7 @@
 								</svg>
 								One uppercase letter (A-Z)
 							</div>
-							<div class="flex items-center gap-2 text-xs {hasNumber ? 'text-emerald-400' : 'text-slate-500'}">
+							<div class="flex items-center gap-2 text-xs {hasNumber ? 'text-emerald-400' : 'text-slate-400'}">
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 									{#if hasNumber}
 										<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -328,7 +328,7 @@
 								</svg>
 								One number (0-9)
 							</div>
-							<div class="flex items-center gap-2 text-xs {hasSymbol ? 'text-emerald-400' : 'text-slate-500'}">
+							<div class="flex items-center gap-2 text-xs {hasSymbol ? 'text-emerald-400' : 'text-slate-400'}">
 								<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 									{#if hasSymbol}
 										<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -358,7 +358,7 @@
 						type={showPassword ? 'text' : 'password'}
 						required
 						bind:value={confirmPassword}
-						class="w-full rounded-xl border bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-500 transition focus:outline-none focus:ring-2
+						class="w-full rounded-xl border bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder:text-slate-400 transition focus:outline-none focus:ring-2
 							{confirmPassword.length > 0 && !passwordsMatch
 							? 'border-red-500 focus:border-red-500 focus:ring-red-500/40'
 							: confirmPassword.length > 0 && passwordsMatch
@@ -478,7 +478,7 @@
 		</div>
 
 		<!-- Footer -->
-		<p class="mt-6 text-center text-xs text-slate-500">
+		<p class="mt-6 text-center text-xs text-slate-400">
 			Protected by reCAPTCHA and CropWatch Security
 		</p>
 	</div>

@@ -119,7 +119,7 @@
 					<span class="text-red-400">*</span>
 				{/if}
 			</label>
-			<span class="text-xs tabular-nums {value.length === DEV_EUI_LENGTH ? 'text-green-400' : 'text-slate-500'}">
+			<span class="text-xs tabular-nums {value.length === DEV_EUI_LENGTH ? 'text-green-400' : 'text-slate-400'}">
 				{value.length}/{DEV_EUI_LENGTH}
 			</span>
 		</div>
@@ -147,7 +147,7 @@
 				class="w-full rounded-xl border bg-slate-800 font-mono uppercase tracking-[0.35em] text-slate-100 placeholder-slate-500 transition-all
 					{sizeClasses[size].input} {sizeClasses[size].text} {borderClass}
 					focus:outline-none
-					disabled:cursor-not-allowed disabled:text-slate-500"
+					disabled:cursor-not-allowed disabled:text-slate-400"
 				style="caret-color: #38bdf8;"
 			/>
 
@@ -158,7 +158,7 @@
 					<button
 						type="button"
 						onclick={clear}
-						class="rounded-full p-1 text-slate-500 transition-colors hover:bg-slate-700 hover:text-slate-300"
+						class="rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-700 hover:text-slate-300"
 						aria-label="Clear input"
 					>
 						<svg class="{sizeClasses[size].icon}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -222,10 +222,10 @@
 	<!-- Help Text -->
 	{#if showHelp && !isTouched}
 		<div class="mt-2 flex items-start gap-2">
-			<svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+			<svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 			</svg>
-			<p class="text-xs text-slate-500">
+			<p class="text-xs text-slate-400">
 				Enter the 16-character hexadecimal Device EUI. You can find this on the device label or paste it directly (spaces/dashes will be removed).
 			</p>
 		</div>

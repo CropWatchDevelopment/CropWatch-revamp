@@ -376,7 +376,7 @@
 									</svg>
 								</div>
 								<p class="text-rose-300 font-medium">Failed to load device table</p>
-								<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+								<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 								<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 									Try again
 								</button>
@@ -460,7 +460,7 @@
 							</div>
 							<div class="mt-3 space-y-2 text-xs text-slate-200">
 								{#if facilityBreakdown.length === 0}
-									<p class="text-slate-500">No devices available.</p>
+									<p class="text-slate-400">No devices available.</p>
 								{:else}
 									{#each facilityBreakdown.slice(0, 4) as facility, index (`${facility.name}-${index}`)}
 										<div class="flex flex-col gap-1">
@@ -491,7 +491,7 @@
 							</div>
 							<div class="mt-3 space-y-2 text-xs text-slate-200">
 								{#if filteredAlerts.filter((d) => d.is_triggered).length === 0}
-									<p class="text-slate-500">No active alerts.</p>
+									<p class="text-slate-400">No active alerts.</p>
 								{:else}
 									{#each filteredAlerts.filter((d) => d.is_triggered) as alert (alert.id)}
 										<div class="flex items-center justify-between">
@@ -519,7 +519,7 @@
 									</svg>
 								</div>
 								<p class="text-rose-300 font-medium">Failed to load alerts panel</p>
-								<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+								<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 								<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 									Try again
 								</button>

@@ -370,7 +370,7 @@
 	>
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<div>
-				<p class="text-xs uppercase tracking-[0.2em] text-slate-500">Temperature sensor</p>
+				<p class="text-xs uppercase tracking-[0.2em] text-slate-400">Temperature sensor</p>
 				<h1 class="mt-1 text-3xl font-semibold text-white">Cold Chain TH-01</h1>
 				<p class="text-sm text-slate-400">
 					Device EUI •
@@ -392,7 +392,7 @@
 			>
 				<div class="flex flex-wrap items-start justify-between gap-4">
 					<div>
-						<p class="text-xs uppercase tracking-[0.3em] text-slate-500">{card.label}</p>
+						<p class="text-xs uppercase tracking-[0.3em] text-slate-400">{card.label}</p>
 						<div class="mt-2 flex items-baseline gap-3">
 							<p class="text-4xl font-semibold text-white">
 								{card.current.toFixed(1)}{card.unit}
@@ -414,19 +414,19 @@
 
 				<div class="mt-4 grid grid-cols-3 gap-3 text-center border-t border-slate-600 pt-4">
 					<div>
-						<p class="text-xs uppercase tracking-wide text-slate-500">Min</p>
+						<p class="text-xs uppercase tracking-wide text-slate-400">Min</p>
 						<p class="text-lg font-semibold text-slate-100">
 							{card.min.toFixed(2)}{card.unit}
 						</p>
 					</div>
 					<div>
-						<p class="text-xs uppercase tracking-wide text-slate-500">Avg</p>
+						<p class="text-xs uppercase tracking-wide text-slate-400">Avg</p>
 						<p class={`text-lg font-semibold ${card.palette.accent}`}>
 							{card.avg.toFixed(2)}{card.unit}
 						</p>
 					</div>
 					<div>
-						<p class="text-xs uppercase tracking-wide text-slate-500">Max</p>
+						<p class="text-xs uppercase tracking-wide text-slate-400">Max</p>
 						<p class="text-lg font-semibold text-slate-100">
 							{card.max.toFixed(2)}{card.unit}
 						</p>
@@ -462,18 +462,18 @@
 
 				<div class="mt-6 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
 					<p>
-						<span class="text-slate-500">Median:</span>
+						<span class="text-slate-400">Median:</span>
 						<span class={`ml-2 font-semibold ${card.palette.badge}`}>
 							{card.median.toFixed(2)}{card.unit}
 						</span>
 					</p>
 					<p>
-						<span class="text-slate-500">Range:</span>
+						<span class="text-slate-400">Range:</span>
 						<span class="ml-2 font-semibold text-slate-100">{card.range.toFixed(2)}{card.unit}</span
 						>
 					</p>
 					<p>
-						<span class="text-slate-500">Alerts:</span>
+						<span class="text-slate-400">Alerts:</span>
 						<span
 							class={`ml-2 font-semibold ${alertCount ? 'text-amber-300' : 'text-emerald-300'}`}
 						>
@@ -481,7 +481,7 @@
 						</span>
 					</p>
 					<p>
-						<span class="text-slate-500">Central value:</span>
+						<span class="text-slate-400">Central value:</span>
 						<span class="ml-2 font-semibold text-slate-100"
 							>{card.median.toFixed(2)}{card.unit}</span
 						>
@@ -513,7 +513,7 @@
 						</svg>
 					</div>
 					<p class="text-rose-300 font-medium">Failed to load heatmap</p>
-					<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+					<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 					<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 						Try again
 					</button>
@@ -527,7 +527,7 @@
 	>
 		<div class="flex flex-wrap items-center justify-between gap-4 mb-4">
 			<div>
-				<p class="text-xs uppercase tracking-[0.2em] text-slate-500">24h history</p>
+				<p class="text-xs uppercase tracking-[0.2em] text-slate-400">24h history</p>
 				<h2 class="text-xl font-semibold text-white">All telemetry points</h2>
 			</div>
 		</div>
@@ -550,7 +550,7 @@
 							</svg>
 						</div>
 						<p class="text-rose-300 font-medium">Failed to load telemetry data</p>
-						<p class="mt-1 text-sm text-slate-500">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+						<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
 						<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
 							Try again
 						</button>
