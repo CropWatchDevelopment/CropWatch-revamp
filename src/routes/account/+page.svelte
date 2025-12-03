@@ -657,12 +657,25 @@
 				<div class="mt-6 flex flex-col items-center gap-4">
 					<!-- Avatar Preview -->
 					<div class="relative">
-						<Avatar
-							size="xl"
-							avatarUrl={avatarPreview ?? avatarUrl}
-							initials={getInitials(data.profile?.full_name ?? data.user?.email)}
-							{supabase}
-						/>
+						<svelte:boundary>
+							<Avatar
+								size="xl"
+								avatarUrl={avatarPreview ?? avatarUrl}
+								initials={getInitials(data.profile?.full_name ?? data.user?.email)}
+								{supabase}
+							/>
+
+							{#snippet failed(error, reset)}
+								<div class="flex h-32 w-32 items-center justify-center rounded-full bg-slate-800 border border-slate-700">
+									<div class="text-center">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+										</svg>
+										<button onclick={reset} class="mt-1 text-xs text-slate-400 hover:text-slate-200">Retry</button>
+									</div>
+								</div>
+							{/snippet}
+						</svelte:boundary>
 					</div>
 
 					<!-- Upload Form -->
