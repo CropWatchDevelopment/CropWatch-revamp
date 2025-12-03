@@ -408,7 +408,7 @@
 				<h1 class="mt-1 text-3xl font-semibold text-white">{device?.name}</h1>
 				<p class="text-sm text-slate-400">
 					Device EUI •
-					<CWCopy value="70-B3-D5-43-0F-12" size="sm" />
+					<CWCopy value={page.params.dev_eui} size="sm" />
 				</p>
 			</div>
 			<div class="text-right text-sm text-slate-400">

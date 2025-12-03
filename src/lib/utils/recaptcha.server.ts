@@ -1,4 +1,4 @@
-import { RECAPTCHA_PROJECT_ID, PRIVATE_RECAPTCHA_SITE_KEY, RECAPTCHA_API_KEY } from '$env/static/private';
+import { PRIVATE_RECAPTCHA_PROJECT_ID, PRIVATE_RECAPTCHA_SITE_KEY, PRIVATE_RECAPTCHA_API_KEY } from '$env/static/private';
 
 export interface RecaptchaVerificationResult {
 	success: boolean;
@@ -36,7 +36,7 @@ export async function verifyRecaptchaToken(
 	minScore: number = 0.5
 ): Promise<RecaptchaVerificationResult> {
 	try {
-		const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${RECAPTCHA_PROJECT_ID}/assessments?key=${RECAPTCHA_API_KEY}`;
+		const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${PRIVATE_RECAPTCHA_PROJECT_ID}/assessments?key=${PRIVATE_RECAPTCHA_API_KEY}`;
 
 		const response = await fetch(url, {
 			method: 'POST',
