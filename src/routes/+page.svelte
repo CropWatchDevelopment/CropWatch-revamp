@@ -18,6 +18,7 @@
 	import CWDonutChart, { type DonutSegment } from '$lib/components/CWDonutChart.svelte';
 	import type { Alert } from '$lib/Interfaces/alert.interface';
 	import ACTIVE_ALERT_ICON from '$lib/images/icons/active_alert.svg';
+	import REFRESH_ICON from '$lib/images/icons/refresh.svg';
 
 	const getAppState = useAppState();
 	let appState = $derived(getAppState());
@@ -327,6 +328,13 @@
 				</div>
 				<span class="flex flex-1"></span>
 				<div id="Dashboard__Overview__actions" class="flex items-center gap-3">
+					<CWButton
+						variant="secondary"
+						onclick={() => window.location.reload()}
+						>
+						<img src={REFRESH_ICON} alt="Refresh Icon" class="h-4 w-4" />
+						Refresh
+					</CWButton>
 					<CWPill value={activeAlerts} color="error" pulse position="bottom-right">
 						<CWButton
 							variant="secondary"
