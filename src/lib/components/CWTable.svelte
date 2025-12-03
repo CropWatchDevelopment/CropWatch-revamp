@@ -877,20 +877,20 @@
 															{@const primary = getColumnValue(item, col)}
 															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
 															<div class="flex flex-col text-left">
-																<span class="text-slate-50">{primary}</span>
+																<span class="text-slate-50 text-lg">{primary}</span>
 																{#if secondary}
 																	<span class="text-[11px] text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-[11px] text-slate-400">
+															<span class="font-mono text-md text-slate-400">
 																{raw ? new Date(raw as string).toLocaleString() : ''}
 															</span>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}
-																<span class="font-mono text-[13px] text-slate-50">
+																<span class="font-mono text-lg text-slate-50">
 																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
 																</span>
 															{:else if col.type === 'buttons' && col.buttons?.length}

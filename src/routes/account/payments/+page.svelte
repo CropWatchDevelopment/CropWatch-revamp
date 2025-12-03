@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { slide } from 'svelte/transition';
 	import CWTable from '$lib/components/CWTable.svelte';
@@ -332,7 +333,7 @@
 						hasProcessed = true;
 						return async ({ update }) => {
 							await update();
-							window.history.replaceState({}, '', window.location.pathname);
+							goto(window.location.pathname);
 						};
 					}}
 				>
