@@ -527,7 +527,7 @@
 				/>
 				{#if search}
 					<button
-						class="absolute inset-y-0 right-2 text-slate-500 hover:text-slate-300"
+						class="absolute inset-y-0 right-2 text-slate-400 hover:text-slate-300"
 						type="button"
 						onclick={() => setSearch('')}
 						aria-label="Clear search"
@@ -631,7 +631,7 @@
 											<span class={col.key === sortKey ? 'text-sky-300' : ''}>{sortIcon(col.key)}</span>
 										{/if}
 										{#if col.filter}
-											<span class={`text-slate-500 ${columnHasFilter(col.key) ? 'text-amber-300' : ''}`}>
+											<span class={`text-slate-400 ${columnHasFilter(col.key) ? 'text-amber-300' : ''}`}>
 												▾
 											</span>
 										{/if}
@@ -745,7 +745,7 @@
 							<tr>
 								<td
 									colspan={actions ? columns.length + 1 : columns.length || 1}
-									class="px-4 py-10 text-center text-sm text-slate-500"
+									class="px-4 py-10 text-center text-sm text-slate-400"
 								>
 									No results match the current filters.
 								</td>
@@ -798,7 +798,7 @@
 															<div class="flex flex-col text-left">
 																<span class="text-slate-50">{primary}</span>
 																{#if secondary}
-																	<span class="text-[11px] text-slate-500">{secondary}</span>
+																	<span class="text-[11px] text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}
@@ -879,7 +879,7 @@
 															<div class="flex flex-col text-left">
 																<span class="text-slate-50">{primary}</span>
 																{#if secondary}
-																	<span class="text-[11px] text-slate-500">{secondary}</span>
+																	<span class="text-[11px] text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}
@@ -997,7 +997,7 @@
 															<div class="flex flex-col text-left">
 																<span class="text-slate-50">{primary}</span>
 																{#if secondary}
-																	<span class="text-[11px] text-slate-500">{secondary}</span>
+																	<span class="text-[11px] text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}
@@ -1078,7 +1078,7 @@
 															<div class="flex flex-col text-left">
 																<span class="text-slate-50">{primary}</span>
 																{#if secondary}
-																	<span class="text-[11px] text-slate-500">{secondary}</span>
+																	<span class="text-[11px] text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}

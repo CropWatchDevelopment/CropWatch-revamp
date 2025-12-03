@@ -159,11 +159,11 @@
 						Idle
 					</span>
 				{/if}
-				<span class="text-sm text-slate-500">
+				<span class="text-sm text-slate-400">
 					Triggered {data.rule.trigger_count} time{data.rule.trigger_count === 1 ? '' : 's'}
 				</span>
 				{#if data.rule.last_triggered}
-					<span class="text-sm text-slate-500">
+					<span class="text-sm text-slate-400">
 						• Last: {new Date(data.rule.last_triggered).toLocaleString()}
 					</span>
 				{/if}
@@ -241,7 +241,7 @@
 							/>
 						</svg>
 						<p class="mt-3 text-slate-400">No conditions defined</p>
-						<p class="mt-1 text-sm text-slate-500">Add at least one condition for the rule to work.</p>
+						<p class="mt-1 text-sm text-slate-400">Add at least one condition for the rule to work.</p>
 					</div>
 				{:else}
 					<div class="space-y-4">
@@ -252,7 +252,7 @@
 									<button
 										type="button"
 										onclick={() => removeCriterion(index)}
-										class="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-700 hover:text-red-400"
+										class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-red-400"
 										aria-label="Remove condition"
 									>
 										<svg
@@ -321,7 +321,7 @@
 									<div class="sm:col-span-1">
 										<label for="reset-value-{index}" class="mb-1 block text-xs font-medium text-slate-400">
 											Reset Value
-											<span class="text-slate-500">(optional)</span>
+											<span class="text-slate-400">(optional)</span>
 										</label>
 										<input
 											id="reset-value-{index}"
@@ -338,7 +338,7 @@
 									</div>
 								</div>
 
-								<p class="mt-2 text-xs text-slate-500">
+								<p class="mt-2 text-xs text-slate-400">
 									Triggers when {subjectOptions.find((s) => s.value === criterion.subject)?.label ?? criterion.subject}
 									is {operatorOptions.find((o) => o.value === criterion.operator)?.label?.toLowerCase() ?? criterion.operator}
 									{criterion.trigger_value}
@@ -379,7 +379,7 @@
 							placeholder="e.g., email@example.com, +1234567890"
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-slate-100 placeholder-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
 						/>
-						<p class="mt-1 text-xs text-slate-500">
+						<p class="mt-1 text-xs text-slate-400">
 							The email address, phone number, or endpoint to send notifications to.
 						</p>
 					</div>
@@ -387,7 +387,7 @@
 					<div>
 						<label for="send_using" class="mb-1 block text-sm font-medium text-slate-300">
 							Send Using
-							<span class="text-slate-500">(optional)</span>
+							<span class="text-slate-400">(optional)</span>
 						</label>
 						<input
 							id="send_using"

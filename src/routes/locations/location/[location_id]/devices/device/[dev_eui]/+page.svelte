@@ -370,7 +370,7 @@
 	>
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<div>
-				<p class="text-xs uppercase tracking-[0.2em] text-slate-500">Temperature sensor</p>
+				<p class="text-xs uppercase tracking-[0.2em] text-slate-400">Temperature sensor</p>
 				<h1 class="mt-1 text-3xl font-semibold text-white">Cold Chain TH-01</h1>
 				<p class="text-sm text-slate-400">
 					Device EUI •
@@ -392,7 +392,7 @@
 			>
 				<div class="flex flex-wrap items-start justify-between gap-4">
 					<div>
-						<p class="text-xs uppercase tracking-[0.3em] text-slate-500">{card.label}</p>
+						<p class="text-xs uppercase tracking-[0.3em] text-slate-400">{card.label}</p>
 						<div class="mt-2 flex items-baseline gap-3">
 							<p class="text-4xl font-semibold text-white">
 								{card.current.toFixed(1)}{card.unit}
@@ -414,19 +414,19 @@
 
 				<div class="mt-4 grid grid-cols-3 gap-3 text-center border-t border-slate-600 pt-4">
 					<div>
-						<p class="text-xs uppercase tracking-wide text-slate-500">Min</p>
+						<p class="text-xs uppercase tracking-wide text-slate-400">Min</p>
 						<p class="text-lg font-semibold text-slate-100">
 							{card.min.toFixed(2)}{card.unit}
 						</p>
 					</div>
 					<div>
-						<p class="text-xs uppercase tracking-wide text-slate-500">Avg</p>
+						<p class="text-xs uppercase tracking-wide text-slate-400">Avg</p>
 						<p class={`text-lg font-semibold ${card.palette.accent}`}>
 							{card.avg.toFixed(2)}{card.unit}
 						</p>
 					</div>
 					<div>
-						<p class="text-xs uppercase tracking-wide text-slate-500">Max</p>
+						<p class="text-xs uppercase tracking-wide text-slate-400">Max</p>
 						<p class="text-lg font-semibold text-slate-100">
 							{card.max.toFixed(2)}{card.unit}
 						</p>
@@ -462,18 +462,18 @@
 
 				<div class="mt-6 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
 					<p>
-						<span class="text-slate-500">Median:</span>
+						<span class="text-slate-400">Median:</span>
 						<span class={`ml-2 font-semibold ${card.palette.badge}`}>
 							{card.median.toFixed(2)}{card.unit}
 						</span>
 					</p>
 					<p>
-						<span class="text-slate-500">Range:</span>
+						<span class="text-slate-400">Range:</span>
 						<span class="ml-2 font-semibold text-slate-100">{card.range.toFixed(2)}{card.unit}</span
 						>
 					</p>
 					<p>
-						<span class="text-slate-500">Alerts:</span>
+						<span class="text-slate-400">Alerts:</span>
 						<span
 							class={`ml-2 font-semibold ${alertCount ? 'text-amber-300' : 'text-emerald-300'}`}
 						>
@@ -481,7 +481,7 @@
 						</span>
 					</p>
 					<p>
-						<span class="text-slate-500">Central value:</span>
+						<span class="text-slate-400">Central value:</span>
 						<span class="ml-2 font-semibold text-slate-100"
 							>{card.median.toFixed(2)}{card.unit}</span
 						>
@@ -497,32 +497,66 @@
 		<p class="mt-4 text-sm text-amber-300">{historyError}</p>
 	{/if}
 
-	<DeviceHeatmap
-		title="Thermal footprint"
-		subtitle="Past 24 hours"
-		metrics={heatmapSeries}
-		dateRange={heatmapRange}
-	/>
+	<svelte:boundary>
+		<DeviceHeatmap
+			title="Thermal footprint"
+			subtitle="Past 24 hours"
+			metrics={heatmapSeries}
+			dateRange={heatmapRange}
+		/>
+		{#snippet failed(error, reset)}
+			<div class="rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-slate-950/40">
+				<div class="flex flex-col items-center justify-center py-12 text-center">
+					<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+						</svg>
+					</div>
+					<p class="text-rose-300 font-medium">Failed to load heatmap</p>
+					<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+					<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
+						Try again
+					</button>
+				</div>
+			</div>
+		{/snippet}
+	</svelte:boundary>
 
 	<section
 		class="rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-lg shadow-slate-950/40"
 	>
 		<div class="flex flex-wrap items-center justify-between gap-4 mb-4">
 			<div>
-				<p class="text-xs uppercase tracking-[0.2em] text-slate-500">24h history</p>
+				<p class="text-xs uppercase tracking-[0.2em] text-slate-400">24h history</p>
 				<h2 class="text-xl font-semibold text-white">All telemetry points</h2>
 			</div>
 		</div>
 
 		<div class="overflow-hidden rounded-2xl border border-slate-800">
-			<CWTable
-				items={historyTableItems}
-				columns={historyTableColumns}
-				pageSize={15}
-				sortKey="timestamp"
-				sortDir="desc"
-				getRowId={(item) => (item as { timestamp: string }).timestamp}
-			/>
+			<svelte:boundary>
+				<CWTable
+					items={historyTableItems}
+					columns={historyTableColumns}
+					pageSize={15}
+					sortKey="timestamp"
+					sortDir="desc"
+					getRowId={(item) => (item as { timestamp: string }).timestamp}
+				/>
+				{#snippet failed(error, reset)}
+					<div class="flex flex-col items-center justify-center py-12 text-center">
+						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+							</svg>
+						</div>
+						<p class="text-rose-300 font-medium">Failed to load telemetry data</p>
+						<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+						<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
+							Try again
+						</button>
+					</div>
+				{/snippet}
+			</svelte:boundary>
 		</div>
 	</section>
 </div>

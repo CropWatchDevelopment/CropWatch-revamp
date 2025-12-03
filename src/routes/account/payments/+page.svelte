@@ -580,12 +580,28 @@
 
 				{#if data.seats.length > 0}
 					<div class="mt-6 -mx-6 -mb-6">
-						<CWTable items={data.seats} columns={seatColumns} pageSize={10} class="text-sm" />
+						<svelte:boundary>
+							<CWTable items={data.seats} columns={seatColumns} pageSize={10} class="text-sm" />
+							{#snippet failed(error, reset)}
+								<div class="flex flex-col items-center justify-center py-12 text-center">
+									<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+										</svg>
+									</div>
+									<p class="text-rose-300 font-medium">Failed to load device seats</p>
+									<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+									<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
+										Try again
+									</button>
+								</div>
+							{/snippet}
+						</svelte:boundary>
 					</div>
 				{:else}
 					<div class="mt-6 rounded-xl border border-slate-800 bg-slate-800/30 py-12 text-center">
 						<div
-							class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700/50 text-slate-500"
+							class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700/50 text-slate-400"
 						>
 							<svg
 								class="h-6 w-6"
@@ -602,7 +618,7 @@
 							</svg>
 						</div>
 						<p class="mt-4 font-medium text-slate-300">No device seats yet</p>
-						<p class="mt-1 text-sm text-slate-500">
+						<p class="mt-1 text-sm text-slate-400">
 							Purchase seats above to start monitoring your devices
 						</p>
 					</div>
@@ -631,17 +647,33 @@
 
 				{#if data.paymentHistory.length > 0}
 					<div class="mt-6 -mx-6 -mb-6">
-						<CWTable
-							items={formattedPaymentHistory}
-							columns={paymentColumns}
-							pageSize={10}
-							class="text-sm"
-						/>
+						<svelte:boundary>
+							<CWTable
+								items={formattedPaymentHistory}
+								columns={paymentColumns}
+								pageSize={10}
+								class="text-sm"
+							/>
+							{#snippet failed(error, reset)}
+								<div class="flex flex-col items-center justify-center py-12 text-center">
+									<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+										</svg>
+									</div>
+									<p class="text-rose-300 font-medium">Failed to load payment history</p>
+									<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+									<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
+										Try again
+									</button>
+								</div>
+							{/snippet}
+						</svelte:boundary>
 					</div>
 				{:else}
 					<div class="mt-6 rounded-xl border border-slate-800 bg-slate-800/30 py-12 text-center">
 						<div
-							class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700/50 text-slate-500"
+							class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-700/50 text-slate-400"
 						>
 							<svg
 								class="h-6 w-6"
@@ -658,7 +690,7 @@
 							</svg>
 						</div>
 						<p class="mt-4 font-medium text-slate-300">No payment history</p>
-						<p class="mt-1 text-sm text-slate-500">
+						<p class="mt-1 text-sm text-slate-400">
 							Your invoices will appear here after your first purchase
 						</p>
 					</div>

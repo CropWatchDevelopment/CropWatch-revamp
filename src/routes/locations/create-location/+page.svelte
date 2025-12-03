@@ -114,7 +114,7 @@
 							placeholder="e.g., 40.7128"
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-slate-100 placeholder-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
 						/>
-						<p class="mt-1 text-xs text-slate-500">Between -90 and 90</p>
+						<p class="mt-1 text-xs text-slate-400">Between -90 and 90</p>
 					</div>
 
 					<div>
@@ -132,7 +132,7 @@
 							placeholder="e.g., -74.0060"
 							class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-slate-100 placeholder-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
 						/>
-						<p class="mt-1 text-xs text-slate-500">Between -180 and 180</p>
+						<p class="mt-1 text-xs text-slate-400">Between -180 and 180</p>
 					</div>
 				</div>
 			</div>

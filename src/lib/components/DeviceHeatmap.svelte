@@ -246,7 +246,7 @@
 	<div class="flex flex-wrap items-center justify-between gap-4">
 		<div class="flex items-center gap-3">
 			<div>
-				<p class="text-xs uppercase tracking-[0.15em] text-slate-500">{title}</p>
+				<p class="text-xs uppercase tracking-[0.15em] text-slate-400">{title}</p>
 				{#if subtitle}
 					<h2 class="text-xl font-semibold text-white">{subtitle}</h2>
 				{/if}
@@ -270,14 +270,14 @@
 				<label
 					class="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-2 text-sm text-slate-200"
 				>
-					<span class="text-xs uppercase tracking-wide text-slate-500">Range</span>
+					<span class="text-xs uppercase tracking-wide text-slate-400">Range</span>
 					<CWDateRangePicker maxDate={new Date()} bind:value={dateRange} />
 				</label>
 				<div class="flex overflow-hidden rounded-full border border-slate-600">
 					{#each metricEntries as [key, metric] (key)}
 						<label
 							class={`cursor-pointer px-4 py-2 text-sm font-medium transition ${
-								selectedMetric === key ? 'bg-slate-700 text-white' : 'bg-transparent text-slate-500'
+								selectedMetric === key ? 'bg-slate-700 text-white' : 'bg-transparent text-slate-400'
 							}`}
 						>
 							<input class="sr-only" type="radio" value={key} bind:group={selectedMetric} />
@@ -322,7 +322,7 @@
 							<span><strong class="text-amber-400">Outlined cells</strong> = alerts triggered</span>
 						</li>
 					</ul>
-					<p class="mt-3 text-xs text-slate-500">
+					<p class="mt-3 text-xs text-slate-400">
 						<strong>Tip:</strong> Hover over any cell to see the exact value. Use arrow keys to navigate between cells.
 					</p>
 				</div>
@@ -366,7 +366,7 @@
 						</div>
 						<div class="text-right">
 							<p class="text-2xl font-bold text-white">{selectedCell.value.toFixed(1)}<span class="text-sm font-normal text-slate-400">{activeMetric.unit}</span></p>
-							<p class="text-xs text-slate-500">
+							<p class="text-xs text-slate-400">
 								{#if selectedCell.value < scale.avg}
 									<span class="text-sky-400">▼ {(scale.avg - selectedCell.value).toFixed(1)} below avg</span>
 								{:else if selectedCell.value > scale.avg}
@@ -386,7 +386,7 @@
 						{/if}
 					</div>
 				{:else}
-					<div class="flex h-full items-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-800/30 px-4 py-3 text-slate-500">
+					<div class="flex h-full items-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-800/30 px-4 py-3 text-slate-400">
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
 						</svg>
@@ -406,7 +406,7 @@
 								style="grid-template-columns: repeat({gridData.hours.length}, minmax(20px, 1fr));"
 							>
 								{#each gridData.hours as hour}
-									<div class="text-center text-[10px] text-slate-500">
+									<div class="text-center text-[10px] text-slate-400">
 										{hour.toString().padStart(2, '0')}
 									</div>
 								{/each}
@@ -519,15 +519,15 @@
 					</div>
 					<div class="mt-2 w-full space-y-1 rounded-lg border border-slate-700 bg-slate-800/50 p-2 text-center">
 						<div class="flex items-center justify-between text-[11px]">
-							<span class="text-slate-500">Max</span>
+							<span class="text-slate-400">Max</span>
 							<span class="font-medium text-rose-300">{scale.max.toFixed(1)}{activeMetric.unit}</span>
 						</div>
 						<div class="flex items-center justify-between text-[11px]">
-							<span class="text-slate-500">Avg</span>
+							<span class="text-slate-400">Avg</span>
 							<span class="font-medium text-slate-300">{scale.avg.toFixed(1)}{activeMetric.unit}</span>
 						</div>
 						<div class="flex items-center justify-between text-[11px]">
-							<span class="text-slate-500">Min</span>
+							<span class="text-slate-400">Min</span>
 							<span class="font-medium text-sky-300">{scale.min.toFixed(1)}{activeMetric.unit}</span>
 						</div>
 					</div>
@@ -535,7 +535,7 @@
 			</div>
 
 			<!-- Summary info -->
-			<div class="flex items-center justify-between text-[11px] text-slate-500">
+			<div class="flex items-center justify-between text-[11px] text-slate-400">
 				<span>{gridData.days.length} day{gridData.days.length !== 1 ? 's' : ''}</span>
 				<span>•</span>
 				<span>{gridData.hours.length} hour{gridData.hours.length !== 1 ? 's' : ''} per day</span>

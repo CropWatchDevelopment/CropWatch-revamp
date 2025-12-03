@@ -42,7 +42,7 @@
 	title="Copy to clipboard"
 >
 	{#if label}
-		<span class="text-slate-500">{label}</span>
+		<span class="text-slate-400">{label}</span>
 	{/if}
 	
 	{#if showValue}

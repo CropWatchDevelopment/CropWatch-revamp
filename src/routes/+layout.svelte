@@ -99,7 +99,28 @@
 			{#if appState.isLoggedIn}
 				<Header isLoggedIn={appState.isLoggedIn} />
 			{/if}
-			{@render children()}
+			<svelte:boundary>
+				{@render children()}
+				{#snippet failed(error, reset)}
+					<div class="flex min-h-[50vh] flex-col items-center justify-center p-8 text-center">
+						<div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-rose-900/30">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+							</svg>
+						</div>
+						<h2 class="text-xl font-semibold text-rose-300">Something went wrong</h2>
+						<p class="mt-2 max-w-md text-slate-400">{(error as Error)?.message || 'An unexpected error occurred while loading this page.'}</p>
+						<div class="mt-6 flex gap-3">
+							<button onclick={reset} class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-sm font-medium transition-colors">
+								Try again
+							</button>
+							<a href="/" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-sm font-medium transition-colors">
+								Go to Dashboard
+							</a>
+						</div>
+					</div>
+				{/snippet}
+			</svelte:boundary>
 		</main>
 	</div>
 </div>

@@ -115,7 +115,7 @@
 			<div class="flex items-center gap-2">
 				<!-- Height indicator on drag -->
 				{#if isDragging}
-					<span class="text-[10px] tabular-nums text-slate-500">{panelHeight}px</span>
+					<span class="text-[10px] tabular-nums text-slate-400">{panelHeight}px</span>
 				{/if}
 				
 				<!-- Close button -->

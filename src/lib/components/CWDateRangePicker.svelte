@@ -197,7 +197,7 @@
 		disabled={disabled}
 		class={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
 			disabled
-				? 'cursor-not-allowed border-slate-700 bg-slate-800/50 text-slate-500'
+				? 'cursor-not-allowed border-slate-700 bg-slate-800/50 text-slate-400'
 				: 'border-slate-700 bg-slate-900 text-slate-100 hover:border-slate-600 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500'
 		}`}
 	>
@@ -215,7 +215,7 @@
 					d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
 				/>
 			</svg>
-			<span class={value.start ? 'text-slate-100' : 'text-slate-500'}>
+			<span class={value.start ? 'text-slate-100' : 'text-slate-400'}>
 				{displayValue}
 			</span>
 		</span>
@@ -315,7 +315,7 @@
 			<!-- Day Names -->
 			<div class="mb-2 grid grid-cols-7 gap-1">
 				{#each DAYS as day (day)}
-					<div class="text-center text-xs font-medium uppercase text-slate-500">
+					<div class="text-center text-xs font-medium uppercase text-slate-400">
 						{day.slice(0, 2)}
 					</div>
 				{/each}
@@ -358,7 +358,7 @@
 			<!-- Selection Status -->
 			<div class="mt-3 flex items-center justify-between border-t border-slate-800 pt-3 text-xs">
 				<div class="flex items-center gap-2">
-					<span class="text-slate-500">
+					<span class="text-slate-400">
 						{selecting === 'start' ? 'Select start date' : 'Select end date'}
 					</span>
 				</div>

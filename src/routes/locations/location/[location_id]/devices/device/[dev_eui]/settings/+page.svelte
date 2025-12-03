@@ -172,7 +172,7 @@
 								<option value={loc.id}>{loc.name}</option>
 							{/each}
 						</select>
-						<p class="mt-1.5 text-xs text-slate-500">
+						<p class="mt-1.5 text-xs text-slate-400">
 							Current: {location?.name ?? 'Unknown'} at {facility?.name ?? 'Unknown Facility'}
 						</p>
 					</div>
@@ -208,24 +208,40 @@
 				</div>
 
 				<div class="mt-6 space-y-3">
-					{#each permissions as user (user.id)}
-						<CWPermissionRowItem
-							{user}
-							supabase={data.supabase}
-							isOwner={user.user_id === ownerId}
-							inlineEdit={true}
-							canEdit={user.user_id !== ownerId}
-							canRemove={user.user_id !== ownerId}
-							onPermissionChange={async (u, newLevel) => {
-								permissions = permissions.map((p) => 
-									p.id === u.id ? { ...p, permission_level: newLevel } : p
-								);
-							}}
-							onRemove={(u) => {
-								permissions = permissions.filter((p) => p.id !== u.id);
-							}}
-						/>
-					{/each}
+					<svelte:boundary>
+						{#each permissions as user (user.id)}
+							<CWPermissionRowItem
+								{user}
+								supabase={data.supabase}
+								isOwner={user.user_id === ownerId}
+								inlineEdit={true}
+								canEdit={user.user_id !== ownerId}
+								canRemove={user.user_id !== ownerId}
+								onPermissionChange={async (u, newLevel) => {
+									permissions = permissions.map((p) => 
+										p.id === u.id ? { ...p, permission_level: newLevel } : p
+									);
+								}}
+								onRemove={(u) => {
+									permissions = permissions.filter((p) => p.id !== u.id);
+								}}
+							/>
+						{/each}
+						{#snippet failed(error, reset)}
+							<div class="flex flex-col items-center justify-center py-8 text-center">
+								<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-900/30">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+									</svg>
+								</div>
+								<p class="text-rose-300 font-medium">Failed to load permissions</p>
+								<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
+								<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
+									Try again
+								</button>
+							</div>
+						{/snippet}
+					</svelte:boundary>
 				</div>
 			</section>
 
@@ -429,7 +445,7 @@
 							{formatDate(deviceInfo.warrantyStart)} — {formatDate(deviceInfo.warrantyEnd)}
 						</p>
 						{#if isWarrantyActive(deviceInfo.warrantyEnd)}
-							<p class="mt-1 text-xs text-slate-500">
+							<p class="mt-1 text-xs text-slate-400">
 								{daysUntilExpiry(deviceInfo.warrantyEnd)} days remaining
 							</p>
 						{/if}
@@ -514,7 +530,7 @@
 							<span class="text-sm font-medium text-white">Replacement Batteries</span>
 						</div>
 						<svg
-							class="h-4 w-4 text-slate-500"
+							class="h-4 w-4 text-slate-400"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -553,7 +569,7 @@
 							<span class="text-sm font-medium text-white">Sensor Probes</span>
 						</div>
 						<svg
-							class="h-4 w-4 text-slate-500"
+							class="h-4 w-4 text-slate-400"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -592,7 +608,7 @@
 							<span class="text-sm font-medium text-white">Mounting Hardware</span>
 						</div>
 						<svg
-							class="h-4 w-4 text-slate-500"
+							class="h-4 w-4 text-slate-400"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
