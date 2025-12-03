@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import * as Sentry from '@sentry/sveltekit';
 
 // Note: Install stripe package: pnpm add stripe
 // Also add STRIPE_SECRET_KEY to your .env file
@@ -100,6 +101,10 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 
 	if (deviceError) {
 		console.error('Error fetching devices:', deviceError);
+		Sentry.captureException(deviceError, {
+			tags: { operation: 'fetchDevices', context: 'payments' },
+			extra: { userId: session.user.id }
+		});
 	}
 
 	// Fetch user's device seats
@@ -111,6 +116,10 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 
 	if (seatsError) {
 		console.error('Error fetching seats:', seatsError);
+		Sentry.captureException(seatsError, {
+			tags: { operation: 'fetchSeats', context: 'payments' },
+			extra: { userId: session.user.id }
+		});
 	}
 
 	// Fetch Stripe customer info if exists
@@ -141,6 +150,10 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 			paymentHistory = invoicesResponse.data;
 		} catch (err) {
 			console.error('Error fetching Stripe data:', err);
+			Sentry.captureException(err, {
+				tags: { operation: 'fetchStripeData' },
+				extra: { stripeCustomerId: stripeCustomer.id }
+			});
 		}
 	}
 
@@ -246,6 +259,10 @@ export const actions: Actions = {
 		} catch (err) {
 			if (err instanceof Response) throw err;
 			console.error('Checkout error:', err);
+			Sentry.captureException(err, {
+				tags: { action: 'createCheckout' },
+				extra: { userId: session.user.id, quantity }
+			});
 			return fail(500, { error: 'Failed to create checkout session' });
 		}
 	},
@@ -317,6 +334,10 @@ export const actions: Actions = {
 
 				if (insertError) {
 					console.error('Error creating seats:', insertError);
+					Sentry.captureException(insertError, {
+						tags: { action: 'createSeats' },
+						extra: { subscriptionId: subscription.id, seatsCount: seatsToCreate.length }
+					});
 					return fail(500, { error: 'Failed to create device seats' });
 				}
 			}
@@ -324,6 +345,10 @@ export const actions: Actions = {
 			return { success: true, message: `Successfully created ${seatsToCreate.length} device seat(s)` };
 		} catch (err) {
 			console.error('Process checkout error:', err);
+			Sentry.captureException(err, {
+				tags: { action: 'processCheckoutSuccess' },
+				extra: { checkoutSessionId }
+			});
 			return fail(500, { error: 'Failed to process checkout' });
 		}
 	},
@@ -396,12 +421,20 @@ export const actions: Actions = {
 
 			if (updateError) {
 				console.error('Error updating seat:', updateError);
+				Sentry.captureException(updateError, {
+					tags: { action: 'assignDevice' },
+					extra: { seatId, devEui }
+				});
 				return fail(500, { error: 'Failed to update seat assignment' });
 			}
 
 			return { success: true, message: devEui ? 'Device assigned to seat' : 'Device removed from seat' };
 		} catch (err) {
 			console.error('Assign device error:', err);
+			Sentry.captureException(err, {
+				tags: { action: 'assignDevice' },
+				extra: { seatId, devEui }
+			});
 			return fail(500, { error: 'Failed to assign device' });
 		}
 	},
@@ -474,12 +507,20 @@ export const actions: Actions = {
 
 			if (insertError) {
 				console.error('Error creating additional seats:', insertError);
+				Sentry.captureException(insertError, {
+					tags: { action: 'addSeatsInsert' },
+					extra: { subscriptionId, additionalSeats }
+				});
 				return fail(500, { error: 'Failed to create additional seats' });
 			}
 
 			return { success: true, message: `Successfully added ${additionalSeats} seat(s)` };
 		} catch (err) {
 			console.error('Add seats error:', err);
+			Sentry.captureException(err, {
+				tags: { action: 'addSeats' },
+				extra: { subscriptionId, additionalSeats }
+			});
 			return fail(500, { error: 'Failed to add seats' });
 		}
 	}

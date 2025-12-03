@@ -1,5 +1,6 @@
 // src/routes/auth/callback/+server.ts
 import { redirect } from '@sveltejs/kit';
+import * as Sentry from '@sentry/sveltekit';
 
 export const GET = async ({ locals, url }) => {
   const code = url.searchParams.get('code');
@@ -8,6 +9,11 @@ export const GET = async ({ locals, url }) => {
   
   if (error) {
     console.error('OAuth callback error:', error);
+    Sentry.captureMessage('OAuth callback error', {
+      level: 'warning',
+      tags: { action: 'oauthCallback' },
+      extra: { error }
+    });
     throw redirect(303, `/auth?error=${error}`);
   }
   if (code) {
@@ -15,6 +21,9 @@ export const GET = async ({ locals, url }) => {
     const { error: exchangeError } = await locals.supabase.auth.exchangeCodeForSession(code);
     if (exchangeError) {
       console.error('Code exchange failed:', exchangeError);
+      Sentry.captureException(exchangeError, {
+        tags: { action: 'codeExchange' }
+      });
       throw redirect(303, '/auth/error');
     }
     // Supabase has set the session cookie at this point

@@ -1,5 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
+import * as Sentry from '@sentry/sveltekit';
 
 export const load: PageServerLoad = async ({ params, locals, parent }) => {
 	const { session, user } = await locals.safeGetSession();
@@ -21,6 +22,9 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
 
 	if (deviceTypesError) {
 		console.error('Error fetching device types:', deviceTypesError);
+		Sentry.captureException(deviceTypesError, {
+			tags: { operation: 'fetchDeviceTypes' }
+		});
 	}
 
 	// Fetch location info
@@ -32,6 +36,12 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
 
 	if (locationError || !location) {
 		console.error('Error fetching location:', locationError);
+		if (locationError) {
+			Sentry.captureException(locationError, {
+				tags: { operation: 'fetchLocation' },
+				extra: { locationId }
+			});
+		}
 		throw redirect(303, '/locations');
 	}
 
@@ -54,6 +64,10 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
 
 	if (locationUsersError) {
 		console.error('Error fetching location users:', locationUsersError);
+		Sentry.captureException(locationUsersError, {
+			tags: { operation: 'fetchLocationUsers' },
+			extra: { locationId }
+		});
 	}
 
 	return {
@@ -123,6 +137,10 @@ export const actions: Actions = {
 
 		if (deviceError) {
 			console.error('Error creating device:', deviceError);
+			Sentry.captureException(deviceError, {
+				tags: { action: 'createDevice' },
+				extra: { devEui, name, locationId, userId: user.id }
+			});
 			return fail(500, { error: 'Failed to create device. Please try again.', devEui, name, deviceType });
 		}
 
@@ -154,6 +172,10 @@ export const actions: Actions = {
 
 				if (ownersError) {
 					console.error('Error adding device owners:', ownersError);
+					Sentry.captureException(ownersError, {
+						tags: { action: 'addDeviceOwners' },
+						extra: { devEui, locationId }
+					});
 					// Don't fail the whole operation, device is created
 				}
 			}
@@ -171,6 +193,10 @@ export const actions: Actions = {
 
 			if (ownerError) {
 				console.error('Error adding device owner:', ownerError);
+				Sentry.captureException(ownerError, {
+					tags: { action: 'addDeviceOwner' },
+					extra: { devEui, ownerId }
+				});
 			}
 
 			// If current user is not the location owner, add them too but with viewer permission (disabled by default)
@@ -186,6 +212,10 @@ export const actions: Actions = {
 
 				if (creatorError) {
 					console.error('Error adding device creator as owner:', creatorError);
+					Sentry.captureException(creatorError, {
+						tags: { action: 'addDeviceCreatorAsOwner' },
+						extra: { devEui, userId: user.id }
+					});
 				}
 			}
 		}

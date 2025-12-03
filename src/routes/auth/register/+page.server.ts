@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { verifyRecaptchaToken } from '$lib/utils/recaptcha.server';
+import * as Sentry from '@sentry/sveltekit';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const { session } = await locals.safeGetSession();
@@ -58,13 +59,29 @@ export const actions: Actions = {
 		const acceptTerms = formData.get('accept_terms') === 'on';
 		const recaptchaToken = formData.get('recaptchaToken') as string;
 
+		Sentry.addBreadcrumb({
+			category: 'auth',
+			message: 'Registration attempt',
+			data: { email, fullName },
+			level: 'info'
+		});
+
 		// Verify reCAPTCHA
 		if (!recaptchaToken) {
+			Sentry.captureMessage('Registration attempt without reCAPTCHA token', {
+				level: 'warning',
+				tags: { action: 'register' }
+			});
 			return fail(400, { message: 'reCAPTCHA verification required.' });
 		}
 
 		const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, 'REGISTER');
 		if (!recaptchaResult.success) {
+			Sentry.captureMessage('reCAPTCHA verification failed during registration', {
+				level: 'warning',
+				tags: { action: 'register' },
+				extra: { email }
+			});
 			return fail(400, { message: 'reCAPTCHA verification failed. Please try again.' });
 		}
 
@@ -113,12 +130,22 @@ export const actions: Actions = {
 
 		if (error) {
 			console.error('Registration error:', error);
+			Sentry.captureException(error, {
+				tags: { action: 'register' },
+				extra: { email, fullName }
+			});
 			return fail(400, { message: error.message });
 		}
 
 		// Check if email confirmation is required
 		if (data.user && !data.session) {
 			// User was created but needs to confirm email
+			Sentry.addBreadcrumb({
+				category: 'auth',
+				message: 'Registration successful - email confirmation required',
+				data: { email },
+				level: 'info'
+			});
 			return {
 				success: true,
 				message: 'Registration successful! Please check your email to confirm your account.'
@@ -127,6 +154,13 @@ export const actions: Actions = {
 
 		// If we got a session, the user is immediately logged in (email confirmation disabled)
 		if (data.session) {
+			Sentry.setUser({ email });
+			Sentry.addBreadcrumb({
+				category: 'auth',
+				message: 'Registration successful - auto logged in',
+				data: { email },
+				level: 'info'
+			});
 			throw redirect(303, '/');
 		}
 

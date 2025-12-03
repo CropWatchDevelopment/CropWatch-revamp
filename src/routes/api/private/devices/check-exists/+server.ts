@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import * as Sentry from '@sentry/sveltekit';
 
 /**
  * Check if a device with the given DevEUI already exists in the database.
@@ -40,6 +41,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		if (error) {
 			console.error('Database error checking device:', error);
+			Sentry.captureException(error, {
+				tags: { api: 'check-exists' },
+				extra: { devEui: cleanDevEui }
+			});
 			return json({ 
 				success: false, 
 				error: 'Failed to check device registration.' 
@@ -66,6 +71,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	} catch (error) {
 		console.error('Error checking device existence:', error);
+		Sentry.captureException(error, {
+			tags: { api: 'check-exists', step: 'unexpected' }
+		});
 		return json({ 
 			success: false, 
 			error: 'An unexpected error occurred.' 

@@ -1,5 +1,6 @@
 // src/routes/auth/login/google/+server.ts
 import { redirect } from '@sveltejs/kit';
+import * as Sentry from '@sentry/sveltekit';
 
 export const GET = async ({ locals, url }) => {
   const { supabase } = locals;
@@ -10,6 +11,9 @@ export const GET = async ({ locals, url }) => {
   });
   if (error) {
     console.error('Google OAuth error:', error);
+    Sentry.captureException(error, {
+      tags: { action: 'googleOAuth' }
+    });
     throw redirect(303, '/auth?error=oauth'); // handle error as needed
   }
   // Redirect the user to the Google consent screen (via Supabase)

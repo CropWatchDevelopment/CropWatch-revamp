@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import * as Sentry from '@sentry/sveltekit';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const { session } = await locals.safeGetSession();
@@ -32,6 +33,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	if (ownedError) {
 		console.error('Error fetching owned locations:', ownedError);
+		Sentry.captureException(ownedError, {
+			tags: { operation: 'fetchOwnedLocations' },
+			extra: { userId: session.user.id }
+		});
 	}
 
 	// Get locations where user has been granted access via cw_location_owners
@@ -61,6 +66,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	if (sharedError) {
 		console.error('Error fetching shared locations:', sharedError);
+		Sentry.captureException(sharedError, {
+			tags: { operation: 'fetchSharedLocations' },
+			extra: { userId: session.user.id }
+		});
 	}
 
 	// Get device counts for all locations

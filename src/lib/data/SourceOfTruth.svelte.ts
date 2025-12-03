@@ -9,6 +9,10 @@ import type { AppStateState } from '$lib/data/AppState.svelte';
 import { goto } from '$app/navigation';
 import { redirect } from '@sveltejs/kit';
 import type { Alert } from '$lib/Interfaces/alert.interface';
+import { captureError, addBreadcrumb, createErrorCapturer } from '$lib/utils/sentry';
+
+// Create a scoped error capturer for SourceOfTruth operations
+const captureDataError = createErrorCapturer({ component: 'SourceOfTruth' });
 
 type DeviceRow = Database['public']['Tables']['cw_devices']['Row'];
 type LocationRow = Database['public']['Tables']['cw_locations']['Row'];
@@ -29,7 +33,9 @@ let currentSessionTokens: { access_token: string; refresh_token: string } | null
 
 async function createSupabaseClient(session?: AuthSession): Promise<SupabaseClient<Database>> {
 	if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) {
-		throw new Error('Supabase environment variables are not set.');
+		const error = new Error('Supabase environment variables are not set.');
+		captureDataError(error, { action: 'createSupabaseClient' });
+		throw error;
 	}
 
 	// Check if we can reuse the existing client
@@ -192,7 +198,10 @@ async function fetchDeviceType(
 		.select('*')
 		.eq('id', typeId)
 		.maybeSingle();
-	if (error) throw error;
+	if (error) {
+		captureDataError(error, { action: 'fetchDeviceType', extra: { typeId } });
+		throw error;
+	}
 	if (data) cache.set(typeId, data);
 	return data ?? null;
 }
@@ -208,7 +217,10 @@ async function fetchLocation(
 		.select('*')
 		.eq('location_id', locationId)
 		.maybeSingle();
-	if (error) throw error;
+	if (error) {
+		captureDataError(error, { action: 'fetchLocation', extra: { locationId } });
+		throw error;
+	}
 	if (data) cache.set(locationId, data);
 	return data ?? null;
 }
@@ -218,6 +230,7 @@ async function fetchLocation(
  * Returns an unsubscribe function.
  */
 export async function startDeviceRealtime(appState: AppStateState, session?: AuthSession) {
+	addBreadcrumb('Starting device realtime subscription', 'realtime');
 	const supabase = await createSupabaseClient(session);
 	const typeCache = new Map<number, DeviceTypeRow>();
 	const locationCache = new Map<number, LocationRow>();
@@ -228,14 +241,22 @@ export async function startDeviceRealtime(appState: AppStateState, session?: Aut
 			'postgres_changes',
 			{ event: 'UPDATE', schema: 'public', table: 'cw_devices' },
 			async (payload) => {
-				await handlePayload(payload, supabase, appState, typeCache, locationCache);
+				try {
+					await handlePayload(payload, supabase, appState, typeCache, locationCache);
+				} catch (error) {
+					captureDataError(error, { action: 'realtimeUpdate', extra: { event: 'UPDATE' } });
+				}
 			}
 		)
 		.on(
 			'postgres_changes',
 			{ event: 'INSERT', schema: 'public', table: 'cw_devices' },
 			async (payload) => {
-				await handlePayload(payload, supabase, appState, typeCache, locationCache);
+				try {
+					await handlePayload(payload, supabase, appState, typeCache, locationCache);
+				} catch (error) {
+					captureDataError(error, { action: 'realtimeInsert', extra: { event: 'INSERT' } });
+				}
 			}
 		)
 		.subscribe();
@@ -294,6 +315,7 @@ export async function fetchDevicePage({
 	locationId?: number;
 	session?: AuthSession;
 }) {
+	addBreadcrumb('Fetching device page', 'data', { limit, cursor, locationId });
 	const supabase = await createSupabaseClient(session);
 
 
@@ -329,6 +351,7 @@ export async function fetchDevicePage({
 
 	const { data, error } = await query;
 	if (error) {
+		captureDataError(error, { action: 'fetchDevicePage', extra: { limit, cursor, locationId } });
 		throw error;
 	}
 	const pageItems = data.slice(0, limit);
@@ -362,6 +385,7 @@ export async function fetchDevicePage({
 export async function loadInitialAppState(
 	session?: AuthSession
 ): Promise<AppState & { nextCursor: string | null }> {
+	addBreadcrumb('Loading initial app state', 'data');
 	const { devices, alerts, locations, facilities, nextCursor } = await fetchDevicePage({
 		limit: 100,
 		session
@@ -393,6 +417,7 @@ export async function fetchDeviceHistory({
 	hoursBack?: number;
 	session?: AuthSession;
 }) {
+	addBreadcrumb('Fetching device history', 'data', { devEui, limit, hoursBack });
 	const supabase = await createSupabaseClient(session);
 
 	const { data: deviceRow, error: deviceError } = await supabase
@@ -403,7 +428,10 @@ export async function fetchDeviceHistory({
 		.eq('dev_eui', devEui)
 		.maybeSingle();
 
-	if (deviceError) throw deviceError;
+	if (deviceError) {
+		captureDataError(deviceError, { action: 'fetchDeviceHistory.getDevice', extra: { devEui } });
+		throw deviceError;
+	}
 	if (!deviceRow?.device_type?.data_table_v2) {
 		return { points: [] as DeviceHistoryPoint[], meta: null as unknown as Record<string, unknown> };
 	}
@@ -433,7 +461,10 @@ export async function fetchDeviceHistory({
 
 	const { data: rows, error: historyError } = await query;
 
-	if (historyError) throw historyError;
+	if (historyError) {
+		captureDataError(historyError, { action: 'fetchDeviceHistory.getData', extra: { devEui, table } });
+		throw historyError;
+	}
 
 	const points: DeviceHistoryPoint[] =
 		rows?.map((row: Record<string, unknown>) => {

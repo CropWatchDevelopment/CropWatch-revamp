@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { verifyRecaptchaToken } from '$lib/utils/recaptcha.server';
+import * as Sentry from '@sentry/sveltekit';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const { session } = await locals.safeGetSession();
@@ -15,13 +16,29 @@ export const actions: Actions = {
 		const email = formData.get('email') as string;
 		const recaptchaToken = formData.get('recaptchaToken') as string;
 
+		Sentry.addBreadcrumb({
+			category: 'auth',
+			message: 'Password reset request',
+			data: { email },
+			level: 'info'
+		});
+
 		// Verify reCAPTCHA
 		if (!recaptchaToken) {
+			Sentry.captureMessage('Password reset attempt without reCAPTCHA token', {
+				level: 'warning',
+				tags: { action: 'resetPassword' }
+			});
 			return fail(400, { message: 'reCAPTCHA verification required.' });
 		}
 
 		const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, 'FORGOT_PASSWORD');
 		if (!recaptchaResult.success) {
+			Sentry.captureMessage('reCAPTCHA verification failed during password reset', {
+				level: 'warning',
+				tags: { action: 'resetPassword' },
+				extra: { email }
+			});
 			return fail(400, { message: 'reCAPTCHA verification failed. Please try again.' });
 		}
 
@@ -38,8 +55,19 @@ export const actions: Actions = {
 
 		if (error) {
 			console.error('Password reset error:', error);
+			Sentry.captureException(error, {
+				tags: { action: 'resetPassword' },
+				extra: { email }
+			});
 			return fail(400, { message: error.message });
 		}
+
+		Sentry.addBreadcrumb({
+			category: 'auth',
+			message: 'Password reset email sent',
+			data: { email },
+			level: 'info'
+		});
 
 		return {
 			success: true,

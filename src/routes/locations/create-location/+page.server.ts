@@ -1,5 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
+import * as Sentry from '@sentry/sveltekit';
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const { session, user } = await locals.safeGetSession();
@@ -69,6 +70,10 @@ export const actions: Actions = {
 
 		if (locationError) {
 			console.error('Error creating location:', locationError);
+			Sentry.captureException(locationError, {
+				tags: { action: 'createLocation' },
+				extra: { name, description, latitude, longitude, userId: user.id }
+			});
 			return fail(500, { error: 'Failed to create location. Please try again.', name, description, lat, long });
 		}
 

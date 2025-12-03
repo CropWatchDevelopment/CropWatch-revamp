@@ -1,5 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
+import * as Sentry from '@sentry/sveltekit';
 
 type RuleRow = {
 	id: number;
@@ -78,6 +79,12 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	if (ruleError || !ruleData) {
 		console.error('Error fetching rule:', ruleError);
+		if (ruleError) {
+			Sentry.captureException(ruleError, {
+				tags: { operation: 'fetchRule' },
+				extra: { ruleId: rule_id, userId: session.user.id }
+			});
+		}
 		throw redirect(303, '/rules');
 	}
 
@@ -109,6 +116,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	if (devicesError) {
 		console.error('Error fetching devices:', devicesError);
+		Sentry.captureException(devicesError, {
+			tags: { operation: 'fetchDevices' },
+			extra: { context: 'edit-rule' }
+		});
 	}
 
 	const devices: DeviceRow[] = (devicesData as DeviceRow[] | null) ?? [];
@@ -121,6 +132,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	if (notifierTypesError) {
 		console.error('Error fetching notifier types:', notifierTypesError);
+		Sentry.captureException(notifierTypesError, {
+			tags: { operation: 'fetchNotifierTypes' }
+		});
 	}
 
 	const notifierTypes: NotifierTypeRow[] = (notifierTypesData as NotifierTypeRow[] | null) ?? [];
@@ -207,6 +221,10 @@ export const actions: Actions = {
 
 		if (updateError) {
 			console.error('Error updating rule:', updateError);
+			Sentry.captureException(updateError, {
+				tags: { action: 'updateRule' },
+				extra: { ruleId: rule_id, name, devEui: dev_eui }
+			});
 			return fail(500, { error: 'Failed to update rule. Please try again.' });
 		}
 
@@ -229,6 +247,10 @@ export const actions: Actions = {
 
 			if (deleteError) {
 				console.error('Error deleting criteria:', deleteError);
+				Sentry.captureException(deleteError, {
+					tags: { action: 'deleteCriteria' },
+					extra: { ruleId: rule_id, idsToDelete }
+				});
 			}
 		}
 
@@ -248,6 +270,10 @@ export const actions: Actions = {
 
 				if (criteriaUpdateError) {
 					console.error('Error updating criterion:', criteriaUpdateError);
+					Sentry.captureException(criteriaUpdateError, {
+						tags: { action: 'updateCriterion' },
+						extra: { criterionId: c.id, ruleId: rule_id }
+					});
 				}
 			} else {
 				// Insert new criterion
@@ -261,6 +287,10 @@ export const actions: Actions = {
 
 				if (criteriaInsertError) {
 					console.error('Error inserting criterion:', criteriaInsertError);
+					Sentry.captureException(criteriaInsertError, {
+						tags: { action: 'insertCriterion' },
+						extra: { ruleId: rule_id, criterion: c }
+					});
 				}
 			}
 		}
@@ -285,6 +315,10 @@ export const actions: Actions = {
 
 		if (criteriaDeleteError) {
 			console.error('Error deleting criteria:', criteriaDeleteError);
+			Sentry.captureException(criteriaDeleteError, {
+				tags: { action: 'deleteRuleCriteria' },
+				extra: { ruleId: rule_id }
+			});
 			return fail(500, { error: 'Failed to delete rule criteria.' });
 		}
 
@@ -297,6 +331,10 @@ export const actions: Actions = {
 
 		if (ruleDeleteError) {
 			console.error('Error deleting rule:', ruleDeleteError);
+			Sentry.captureException(ruleDeleteError, {
+				tags: { action: 'deleteRule' },
+				extra: { ruleId: rule_id }
+			});
 			return fail(500, { error: 'Failed to delete rule.' });
 		}
 

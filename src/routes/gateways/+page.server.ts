@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import * as Sentry from '@sentry/sveltekit';
 
 type GatewayRecord = {
 	id: number;
@@ -45,6 +46,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	if (ownedError) {
 		console.error('Error fetching owned gateways', ownedError);
+		Sentry.captureException(ownedError, {
+			tags: { operation: 'fetchOwnedGateways' },
+			extra: { userId: session.user.id }
+		});
 	}
 
 	const { data: publicGateways, error: publicError } = await supabase
@@ -54,6 +59,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	if (publicError) {
 		console.error('Error fetching public gateways', publicError);
+		Sentry.captureException(publicError, {
+			tags: { operation: 'fetchPublicGateways' }
+		});
 	}
 
 	const gatewayMap = new Map<string, GatewayWithDevices>();
@@ -90,6 +98,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 		if (deviceError) {
 			console.error('Error fetching gateway devices', deviceError);
+			Sentry.captureException(deviceError, {
+				tags: { operation: 'fetchGatewayDevices' },
+				extra: { gatewayIds }
+			});
 		}
 
 		const grouped = (deviceLinks ?? []).reduce(

@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import * as Sentry from '@sentry/sveltekit';
 
 type RuleRow = {
 	id: number;
@@ -56,6 +57,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	if (error) {
 		console.error('Error fetching rules', error);
+		Sentry.captureException(error, {
+			tags: { operation: 'fetchRules' },
+			extra: { userId: session.user.id }
+		});
 	}
 
 	const rules =

@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { TTI_API_URL, TTI_API_KEY } from '$env/static/private';
+import * as Sentry from '@sentry/sveltekit';
 
 /**
  * Verify if a device exists in The Things Industries (TTI) by its DevEUI.
@@ -45,6 +46,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		// Check if TTI configuration is available
 		if (!TTI_API_URL || !TTI_API_KEY) {
 			console.error('TTI configuration missing: TTI_API_URL or TTI_API_KEY not set');
+			Sentry.captureMessage('TTI configuration missing', {
+				level: 'error',
+				tags: { api: 'verify-device', issue: 'config' }
+			});
 			return json({ 
 				success: false, 
 				error: 'TTI integration not configured. Please contact support.',
@@ -121,6 +126,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		if (!listResponse.ok) {
 			const errorText = await listResponse.text();
 			console.error('TTI API error:', listResponse.status, errorText);
+			Sentry.captureMessage('TTI API error', {
+				level: 'error',
+				tags: { api: 'verify-device', ttiStatus: listResponse.status.toString() },
+				extra: { errorText, applicationId }
+			});
 			
 			if (listResponse.status === 401 || listResponse.status === 403) {
 				return json({ 
@@ -178,6 +188,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	} catch (error) {
 		console.error('Error verifying device with TTI:', error);
+		Sentry.captureException(error, {
+			tags: { api: 'verify-device', step: 'unexpected' }
+		});
 		return json({ 
 			success: false, 
 			error: 'An unexpected error occurred while verifying the device.'

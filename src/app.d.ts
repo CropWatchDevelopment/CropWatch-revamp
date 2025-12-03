@@ -3,7 +3,11 @@
 import type { SupabaseClient, Session, User } from '@supabase/supabase-js';
 declare global {
 	namespace App {
-		// interface Error {}
+		interface Error {
+			message: string;
+			errorId?: string;
+			code?: string;
+		}
 		interface Locals {
 			supabase: SupabaseClient;
 			session: Session | null;

@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import * as Sentry from '@sentry/sveltekit';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
 	const { session } = await safeGetSession();
@@ -17,6 +18,10 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 
 	if (error) {
 		console.error('Error fetching profile:', error);
+		Sentry.captureException(error, {
+			tags: { operation: 'fetchProfile' },
+			extra: { userId: session.user.id }
+		});
 	}
 
 	return {
@@ -56,6 +61,10 @@ export const actions: Actions = {
 
 		if (error) {
 			console.error('Error updating profile:', error);
+			Sentry.captureException(error, {
+				tags: { action: 'updateProfile' },
+				extra: { userId: session.user.id, username, fullName }
+			});
 			return fail(500, { error: 'Failed to update profile' });
 		}
 
@@ -88,6 +97,10 @@ export const actions: Actions = {
 
 		if (error) {
 			console.error('Error updating password:', error);
+			Sentry.captureException(error, {
+				tags: { action: 'updatePassword' },
+				extra: { userId: session.user.id }
+			});
 			return fail(500, { error: 'Failed to update password', action: 'password' });
 		}
 
@@ -135,6 +148,10 @@ export const actions: Actions = {
 
 		if (uploadError) {
 			console.error('Error uploading avatar:', uploadError);
+			Sentry.captureException(uploadError, {
+				tags: { action: 'uploadAvatar', step: 'upload' },
+				extra: { userId: session.user.id, fileName, fileSize: avatar.size }
+			});
 			return fail(500, { error: 'Failed to upload avatar', action: 'avatar' });
 		}
 
@@ -154,6 +171,10 @@ export const actions: Actions = {
 
 		if (updateError) {
 			console.error('Error updating profile with avatar:', updateError);
+			Sentry.captureException(updateError, {
+				tags: { action: 'uploadAvatar', step: 'updateProfile' },
+				extra: { userId: session.user.id, publicUrl }
+			});
 			return fail(500, { error: 'Failed to update profile with new avatar', action: 'avatar' });
 		}
 
@@ -178,6 +199,10 @@ export const actions: Actions = {
 
 		if (error) {
 			console.error('Error removing avatar:', error);
+			Sentry.captureException(error, {
+				tags: { action: 'removeAvatar' },
+				extra: { userId: session.user.id }
+			});
 			return fail(500, { error: 'Failed to remove avatar', action: 'avatar' });
 		}
 

@@ -1,5 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
+import * as Sentry from '@sentry/sveltekit';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
     const { session } = await locals.safeGetSession();
@@ -33,6 +34,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
     if (locationsError) {
         console.error('Error fetching locations:', locationsError);
+        Sentry.captureException(locationsError, {
+            tags: { operation: 'fetchLocationById' },
+            extra: { locationId: params.location_id, userId: session.user.id }
+        });
     }
 
     return {
