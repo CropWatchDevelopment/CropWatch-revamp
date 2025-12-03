@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Header from '$lib/core/Header.svelte';
 	import Sidebar from '$lib/core/Sidebar.svelte';
+	import CWOfflineOverlay from '$lib/components/CWOfflineOverlay.svelte';
 	import type { Device } from '$lib/Interfaces/device.interface';
 	import type { Facility } from '$lib/Interfaces/facility.interface';
 	import type { Location } from '$lib/Interfaces/location.interface';
@@ -81,6 +82,7 @@
 </script>
 
 <div class="app flex h-screen flex-col overflow-hidden bg-slate-950 text-slate-100">
+	<CWOfflineOverlay />
 	<CWToastContainer position="top-right" />
 	<div class="flex min-h-0 flex-1 flex-row overflow-hidden">
 		{#if appState.isLoggedIn}
