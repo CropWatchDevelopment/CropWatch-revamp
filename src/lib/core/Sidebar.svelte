@@ -39,6 +39,56 @@
 	const useDrawer = $derived(!isDesktop);
 	const sidebarWidth = 320;
 
+	// Normalize search term for case-insensitive matching
+	const searchTerm = $derived(search.trim().toLowerCase());
+
+	// Filter facilities based on search term
+	const filteredFacilities = $derived(
+		searchTerm
+			? facilities.filter((f: Facility) => {
+					// Match facility name or code
+					const facilityMatches =
+						f.name.toLowerCase().includes(searchTerm) ||
+						f.code.toLowerCase().includes(searchTerm);
+					// Also include if any device in this facility matches
+					const hasMatchingDevice = devices.some(
+						(d: Device) =>
+							d.facilityId === f.id &&
+							d.name.toLowerCase().includes(searchTerm)
+					);
+					// Also include if any location in this facility matches
+					const hasMatchingLocation = locationsForFacility.some(
+						(loc: Location) =>
+							loc.facilityId === f.id && loc.name.toLowerCase().includes(searchTerm)
+					);
+					return facilityMatches || hasMatchingDevice || hasMatchingLocation;
+				})
+			: facilities
+	);
+
+	// Filter locations based on search term
+	const filteredLocations = $derived(
+		searchTerm
+			? locationsForFacility.filter((loc: Location) => {
+					// Match location name
+					const locationMatches = loc.name.toLowerCase().includes(searchTerm);
+					// Also include if any device in this location matches
+					const hasMatchingDevice = devices.some(
+						(d: Device) =>
+							d.locationId === loc.id &&
+							d.name.toLowerCase().includes(searchTerm)
+					);
+					// Also include if parent facility matches
+					const parentFacility = facilities.find((f: Facility) => f.id === loc.facilityId);
+					const facilityMatches = parentFacility
+						? parentFacility.name.toLowerCase().includes(searchTerm) ||
+							parentFacility.code.toLowerCase().includes(searchTerm)
+						: false;
+					return locationMatches || hasMatchingDevice || facilityMatches;
+				})
+			: locationsForFacility
+	);
+
 	function closeDrawer() {
 		isDrawerOpen = false;
 	}
@@ -154,6 +204,18 @@
 					class="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-slate-400"
 					placeholder="Search facility, location, device…"
 				/>
+				{#if search}
+					<button
+						type="button"
+						onclick={() => (search = '')}
+						class="flex h-5 w-5 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-700 hover:text-slate-200"
+						aria-label="Clear search"
+					>
+						<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+				{/if}
 			</div>
 		</div>
 
@@ -183,7 +245,7 @@
 						<span class="text-xs text-slate-400">{devices?.length}</span>
 					</button>
 
-					{#each facilities as f (f.id)}
+					{#each filteredFacilities as f (f.id)}
 						{@const count = devices.filter((d: Device) => d.facilityId === f.id).length}
 						{@const hasAlert = devices.some((d: Device) => d.facilityId === f.id && d.hasAlert)}
 						<button
@@ -210,6 +272,10 @@
 								<span>{count}</span>
 							</span>
 						</button>
+					{:else}
+						{#if searchTerm}
+							<p class="px-2 py-3 text-center text-xs text-slate-500">No facilities match "{search}"</p>
+						{/if}
 					{/each}
 				</div>
 			</div>
@@ -237,12 +303,12 @@
 						</button>
 						<button
 							class="hidden group-hover:flex px-1 text-slate-400 hover:text-slate-200"
-							onclick={() => goto(`/locations/location/${loc.id}`)}
+							onclick={() => goto('/locations')}
 						>
-							<img src={EYE_ICON} alt="More options icon" class="h-4 w-4" />
+							<img src={EYE_ICON} alt="View all locations" class="h-4 w-4" />
 						</button>
 					</span>
-					{#each locationsForFacility as loc (loc.id)}
+					{#each filteredLocations as loc (loc.id)}
 						{@const locDevices = devices.filter((d: Device) => d.locationId === loc.id)}
 						{@const hasAlert = locDevices.some((d: Device) => d.hasAlert)}
 						<span class="flex flex-row items-center group">
@@ -270,6 +336,10 @@
 								<img src={MORE_VERT_ICON} alt="More options icon" class="h-4 w-4" />
 							</button>
 						</span>
+					{:else}
+						{#if searchTerm}
+							<p class="px-2 py-3 text-center text-xs text-slate-500">No locations match "{search}"</p>
+						{/if}
 					{/each}
 				</div>
 			</div>

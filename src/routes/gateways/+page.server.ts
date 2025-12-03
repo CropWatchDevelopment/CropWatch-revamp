@@ -11,8 +11,24 @@ type GatewayRecord = {
 	updated_at: string | null;
 };
 
+type GatewayConnection = {
+	gateway_id: string;
+	gateway_name: string;
+	rssi: number | null;
+	snr: number | null;
+	last_update: string;
+};
+
+type DeviceInfo = {
+	dev_eui: string;
+	name: string | null;
+	location_id: number | null;
+	location_name?: string | null;
+	gateways: GatewayConnection[];
+};
+
 type GatewayWithDevices = GatewayRecord & {
-	devices: { dev_eui: string; name: string | null }[];
+	devices: DeviceInfo[];
 	device_count: number;
 	access_via?: 'owner' | 'public';
 };
@@ -80,9 +96,16 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.select(
 				`
 				gateway_id,
+				rssi,
+				snr,
+				last_update,
 				device:cw_devices (
 					dev_eui,
-					name
+					name,
+					location_id,
+					location:cw_locations (
+						name
+					)
 				)
 			`
 			)
@@ -92,15 +115,32 @@ export const load: PageServerLoad = async ({ locals }) => {
 			console.error('Error fetching gateway devices', deviceError);
 		}
 
+		// Group devices by gateway, preserving connection info
 		const grouped = (deviceLinks ?? []).reduce(
 			(acc, link) => {
 				const key = link.gateway_id;
 				const deviceData = Array.isArray(link.device) ? link.device[0] : link.device;
 				if (!acc[key]) acc[key] = [];
-				if (deviceData) acc[key].push(deviceData);
+				if (deviceData) {
+					const gateway = gateways.find((g) => g.gateway_id === key);
+					const locationData = Array.isArray(deviceData.location) ? deviceData.location[0] : deviceData.location;
+					acc[key].push({
+						dev_eui: deviceData.dev_eui,
+						name: deviceData.name,
+						location_id: deviceData.location_id,
+						location_name: locationData?.name ?? null,
+						gateways: [{
+							gateway_id: key,
+							gateway_name: gateway?.gateway_name ?? key,
+							rssi: link.rssi,
+							snr: link.snr,
+							last_update: link.last_update
+						}]
+					});
+				}
 				return acc;
 			},
-			{} as Record<string, { dev_eui: string; name: string | null }[]>
+			{} as Record<string, DeviceInfo[]>
 		);
 
 		gateways.forEach((gw) => {

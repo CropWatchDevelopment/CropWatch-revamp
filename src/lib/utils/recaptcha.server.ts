@@ -1,4 +1,4 @@
-import { RECAPTCHA_PROJECT_ID, RECAPTCHA_SITE_KEY, RECAPTCHA_API_KEY } from '$env/static/private';
+import { RECAPTCHA_PROJECT_ID, PRIVATE_RECAPTCHA_SITE_KEY, RECAPTCHA_API_KEY } from '$env/static/private';
 
 export interface RecaptchaVerificationResult {
 	success: boolean;
@@ -46,7 +46,7 @@ export async function verifyRecaptchaToken(
 			body: JSON.stringify({
 				event: {
 					token: token,
-					siteKey: RECAPTCHA_SITE_KEY,
+					siteKey: PRIVATE_RECAPTCHA_SITE_KEY,
 					expectedAction: expectedAction
 				}
 			})
