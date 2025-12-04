@@ -363,7 +363,7 @@ export async function loadInitialAppState(
 	session?: AuthSession
 ): Promise<AppState & { nextCursor: string | null }> {
 	const { devices, alerts, locations, facilities, nextCursor } = await fetchDevicePage({
-		limit: 100,
+		limit: 1000,
 		session
 	});
 	return { devices, alerts, locations, facilities, nextCursor, isLoggedIn: !!session };

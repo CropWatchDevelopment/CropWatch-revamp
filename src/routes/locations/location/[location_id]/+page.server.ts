@@ -30,6 +30,12 @@ export const load: PageServerLoad = async ({ locals, params }) => {
         .eq('owner_id', session.user.id)
         .eq('location_id', parseInt(params.location_id))
         .single();
+    
+    const { data: locationPermissions, error: locationPermissionsError } = await supabase
+        .from('cw_location_owners')
+        .select('profiles:user_id (id, full_name, email), user_id, permission_level, is_active')
+        .eq('location_id', parseInt(params.location_id))
+        .eq('is_active', true);
 
     if (locationsError) {
         console.error('Error fetching locations:', locationsError);
@@ -37,7 +43,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
     return {
         session,
-        location: locations || null
+        location: locations || null,
+        locationPermissions: locationPermissions || []
     };
 
 };

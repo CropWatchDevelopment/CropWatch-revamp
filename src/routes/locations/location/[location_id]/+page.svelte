@@ -5,8 +5,9 @@
 	import CWDialog from '$lib/components/CWDialog.svelte';
 	import CWCopy from '$lib/components/CWCopy.svelte';
 	import CWTable from '$lib/components/CWTable.svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import CWLocationPermission from '$lib/components/CWLocationPermission.svelte';
 
 	// Types
 	interface LocationDevice {
@@ -18,27 +19,32 @@
 		status: 'online' | 'offline' | 'warning';
 	}
 
-	interface LocationUser {
-		id: string;
-		user_id: string;
-		full_name: string;
-		email: string;
-		avatar_url: string | null;
-		permission_level: number;
-		permission_name: string;
-		is_active: boolean;
-	}
-
-	interface PermissionLevel {
-		id: number;
-		name: string;
-	}
-
 	let { data } = $props();
 	const location = $derived<Location>(data.location);
+	const supabase = $derived(data.supabase);
 
 	// Get location ID from route params
 	const locationId = $derived($page.params.location_id);
+
+	// Transform locationPermissions to flatten the profiles array from Supabase join
+	// Also deduplicate by user_id to prevent duplicate key errors
+	const locationPermissions = $derived.by(() => {
+		const mapped = (data.locationPermissions || []).map(
+			(p: { user_id: string; permission_level: number; is_active: boolean; profiles: { id: string; email: string; full_name: string }[] | { id: string; email: string; full_name: string } }) => ({
+				user_id: p.user_id,
+				permission_level: p.permission_level,
+				is_active: p.is_active,
+				profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
+			})
+		);
+		// Deduplicate by user_id, keeping the first occurrence
+		const seen = new Set<string>();
+		return mapped.filter((p) => {
+			if (seen.has(p.user_id)) return false;
+			seen.add(p.user_id);
+			return true;
+		});
+	});
 
 	// Mock data - replace with actual data fetching
 	let locationName = $state(location.name ?? 'Location name not set');
@@ -51,7 +57,6 @@
 	let editName = $state('');
 	let editDescription = $state('');
 	let savingSettings = $state(false);
-	let showAllUsers = $state(false);
 
 	// Devices state
 	let devices = $state<LocationDevice[]>([
@@ -109,74 +114,17 @@
 		}
 	]);
 
-	// Permission levels
-	const permissionLevels: PermissionLevel[] = [
-		{ id: 1, name: 'Viewer' },
-		{ id: 2, name: 'Operator' },
-		{ id: 3, name: 'Manager' },
-		{ id: 4, name: 'Admin' }
-	];
-
-	// Users with permissions
-	let users = $state<LocationUser[]>([
-		{
-			id: '1',
-			user_id: 'user-001',
-			full_name: 'John Smith',
-			email: 'john.smith@example.com',
-			avatar_url: null,
-			permission_level: 4,
-			permission_name: 'Admin',
-			is_active: true
-		},
-		{
-			id: '2',
-			user_id: 'user-002',
-			full_name: 'Sarah Johnson',
-			email: 'sarah.j@example.com',
-			avatar_url: null,
-			permission_level: 3,
-			permission_name: 'Manager',
-			is_active: true
-		},
-		{
-			id: '3',
-			user_id: 'user-003',
-			full_name: 'Mike Wilson',
-			email: 'mike.w@example.com',
-			avatar_url: null,
-			permission_level: 1,
-			permission_name: 'Viewer',
-			is_active: true
-		}
-	]);
-
 	// Dialog states
 	let showAddDeviceDialog = $state(false);
 	let showRemoveDeviceDialog = $state(false);
-	let showAddUserDialog = $state(false);
-	let showEditUserDialog = $state(false);
-	let showRemoveUserDialog = $state(false);
 
 	// Selected items for dialogs
 	let selectedDevice = $state<LocationDevice | null>(null);
 	let selectedDeviceToAdd = $state<string>('');
-	let selectedUser = $state<LocationUser | null>(null);
-
-	// New user form
-	let newUserEmail = $state('');
-	let newUserPermission = $state(1);
-	let applyToAllDevices = $state(false);
-	let addingUser = $state(false);
-
-	// Edit user form
-	let editUserPermission = $state(1);
-	let editingUser = $state(false);
 
 	// Loading states
 	let removingDevice = $state(false);
 	let addingDevice = $state(false);
-	let removingUser = $state(false);
 
 	// Computed values
 	const onlineDevices = $derived(devices.filter((d) => d.status === 'online').length);
@@ -232,84 +180,6 @@
 		removingDevice = false;
 		showRemoveDeviceDialog = false;
 		selectedDevice = null;
-	}
-
-	function openAddUserDialog() {
-		newUserEmail = '';
-		newUserPermission = 1;
-		applyToAllDevices = false;
-		showAddUserDialog = true;
-	}
-
-	function openEditUserDialog(user: LocationUser) {
-		selectedUser = user;
-		editUserPermission = user.permission_level;
-		showEditUserDialog = true;
-	}
-
-	function openRemoveUserDialog(user: LocationUser) {
-		selectedUser = user;
-		showRemoveUserDialog = true;
-	}
-
-	async function addUser() {
-		if (!newUserEmail) return;
-		addingUser = true;
-		// Simulate API call
-		await new Promise((r) => setTimeout(r, 500));
-		const permission = permissionLevels.find((p) => p.id === newUserPermission);
-		users = [
-			...users,
-			{
-				id: crypto.randomUUID(),
-				user_id: crypto.randomUUID(),
-				full_name: newUserEmail.split('@')[0],
-				email: newUserEmail,
-				avatar_url: null,
-				permission_level: newUserPermission,
-				permission_name: permission?.name || 'Viewer',
-				is_active: true
-			}
-		];
-
-		if (applyToAllDevices) {
-			// Here you would also add the user to all devices in the location
-			console.log('Applying permissions to all devices in location');
-		}
-
-		addingUser = false;
-		showAddUserDialog = false;
-	}
-
-	async function updateUserPermission() {
-		if (!selectedUser) return;
-		editingUser = true;
-		// Simulate API call
-		await new Promise((r) => setTimeout(r, 500));
-		const permission = permissionLevels.find((p) => p.id === editUserPermission);
-		users = users.map((u) =>
-			u.id === selectedUser!.id
-				? {
-						...u,
-						permission_level: editUserPermission,
-						permission_name: permission?.name || 'Viewer'
-					}
-				: u
-		);
-		editingUser = false;
-		showEditUserDialog = false;
-		selectedUser = null;
-	}
-
-	async function removeUser() {
-		if (!selectedUser) return;
-		removingUser = true;
-		// Simulate API call
-		await new Promise((r) => setTimeout(r, 500));
-		users = users.filter((u) => u.id !== selectedUser!.id);
-		removingUser = false;
-		showRemoveUserDialog = false;
-		selectedUser = null;
 	}
 
 	function formatLastSeen(timestamp: string | null) {
@@ -414,67 +284,6 @@
 			]
 		}
 	];
-
-	const permissionBadges = {
-		Admin: { badgeClass: 'bg-purple-500/15 text-purple-200' },
-		Manager: { badgeClass: 'bg-sky-500/15 text-sky-200' },
-		Operator: { badgeClass: 'bg-amber-500/15 text-amber-200' },
-		Viewer: { badgeClass: 'bg-slate-600/30 text-slate-200' }
-	};
-
-	const activityBadges = {
-		Active: { dotClass: 'bg-emerald-400', badgeClass: 'bg-emerald-500/15 text-emerald-200' },
-		Inactive: { dotClass: 'bg-slate-400', badgeClass: 'bg-slate-700/50 text-slate-200' }
-	};
-
-	const permissionTableItems = $derived(
-		users.map((user) => ({
-			...user,
-			status_label: user.is_active ? 'Active' : 'Inactive'
-		}))
-	);
-
-	const permissionColumns = [
-		{
-			key: 'full_name',
-			label: 'User',
-			type: 'stacked',
-			secondaryKey: 'email',
-			sortable: true
-		},
-		{
-			key: 'permission_name',
-			label: 'Permission',
-			type: 'badge',
-			badges: permissionBadges,
-			sortable: true
-		},
-		{
-			key: 'status_label',
-			label: 'Status',
-			type: 'badge',
-			badges: activityBadges
-		},
-		{
-			key: 'actions',
-			label: 'Actions',
-			type: 'buttons',
-			align: 'right',
-			buttons: [
-				{
-					label: 'Edit',
-					variant: 'ghost',
-					onClick: (row: unknown) => openEditUserDialog(row as LocationUser)
-				},
-				{
-					label: 'Remove',
-					variant: 'ghost',
-					class: 'text-red-300 hover:text-red-200 border-red-500/50',
-					onClick: (row: unknown) => openRemoveUserDialog(row as LocationUser)
-				}
-			]
-		}
-	];
 </script>
 
 <svelte:head>
@@ -556,10 +365,7 @@
 				</div>
 			</div>
 			<div class="rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-lg">
-				<div
-					class="flex items-center gap-3 cursor-pointer"
-					onclick={() => (showAllUsers = !showAllUsers)}
-				>
+				<div class="flex items-center gap-3">
 					<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/20">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -578,7 +384,7 @@
 					</div>
 					<div>
 						<p class="text-sm text-slate-400">Users</p>
-						<p class="text-xl font-semibold text-slate-100">{users.length}</p>
+						<p class="text-xl font-semibold text-slate-100">{locationPermissions.length}</p>
 					</div>
 				</div>
 			</div>
@@ -727,7 +533,9 @@
 				>
 					{#snippet empty()}
 						<div class="flex flex-col items-center justify-center py-12 text-center">
-							<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800"
+							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									class="h-8 w-8 text-slate-400"
@@ -750,14 +558,32 @@
 				</CWTable>
 				{#snippet failed(error, reset)}
 					<div class="flex flex-col items-center justify-center py-12 text-center">
-						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30">
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+						<div
+							class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-8 w-8 text-rose-400"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+								/>
 							</svg>
 						</div>
 						<p class="text-rose-300 font-medium">Failed to load devices</p>
-						<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
-						<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
+						<p class="mt-1 text-sm text-slate-400">
+							{(error as Error)?.message || 'An unexpected error occurred'}
+						</p>
+						<button
+							onclick={reset}
+							class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors"
+						>
 							Try again
 						</button>
 					</div>
@@ -767,76 +593,16 @@
 
 		<!-- Permissions Section -->
 		<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
-			<div class="mb-4 flex items-center justify-between">
-				<div>
-					<h2 class="text-lg font-semibold text-slate-100">Permissions</h2>
-					<p class="mt-1 text-sm text-slate-400">Manage user access to this location</p>
-				</div>
-				<CWButton variant="primary" size="sm" onclick={openAddUserDialog}>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-4 w-4"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-						/>
-					</svg>
-					Add User
-				</CWButton>
-			</div>
-
-			<svelte:boundary>
-				<CWTable
-					items={permissionTableItems}
-					columns={permissionColumns}
-					storageKey={`location-${locationId}-permissions`}
-					pageSize={8}
-					class="text-sm"
-				>
-					{#snippet empty()}
-						<div class="flex flex-col items-center justify-center py-12 text-center">
-							<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-8 w-8 text-slate-400"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-									/>
-								</svg>
-							</div>
-							<p class="text-slate-400">No users have access to this location</p>
-							<p class="mt-1 text-sm text-slate-400">Add a user to grant them access</p>
-						</div>
-					{/snippet}
-				</CWTable>
-				{#snippet failed(error, reset)}
-					<div class="flex flex-col items-center justify-center py-12 text-center">
-						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30">
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-							</svg>
-						</div>
-						<p class="text-rose-300 font-medium">Failed to load permissions</p>
-						<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
-						<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
-							Try again
-						</button>
-					</div>
-				{/snippet}
-			</svelte:boundary>
+			<CWLocationPermission
+				{supabase}
+				locationId={parseInt(locationId ?? '0')}
+				permissions={locationPermissions}
+				canEdit={true}
+				canRemove={true}
+				onPermissionsChange={async () => {
+					await invalidate('location:permissions');
+				}}
+			/>
 		</div>
 	</div>
 </div>
@@ -875,150 +641,6 @@
 			>
 				Add Device
 			</CWButton>
-		</div>
-	</div>
-</CWDialog>
-
-<!-- Add User Dialog -->
-<CWDialog bind:open={showAddUserDialog} title="Add User">
-	<div class="space-y-4">
-		<p class="text-sm text-slate-400">Grant a user access to this location.</p>
-
-		<div>
-			<label for="user-email" class="mb-1 block text-sm font-medium text-slate-300"
-				>User Email</label
-			>
-			<input
-				id="user-email"
-				type="email"
-				bind:value={newUserEmail}
-				placeholder="user@example.com"
-				class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-slate-100 placeholder-slate-500 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-			/>
-		</div>
-
-		<div>
-			<label for="user-permission" class="mb-1 block text-sm font-medium text-slate-300"
-				>Permission Level</label
-			>
-			<select
-				id="user-permission"
-				bind:value={newUserPermission}
-				class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-slate-100 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-			>
-				{#each permissionLevels as level (level.id)}
-					<option value={level.id}>{level.name}</option>
-				{/each}
-			</select>
-		</div>
-
-		<div class="rounded-xl border border-slate-700 bg-slate-800/50 p-4">
-			<label class="flex cursor-pointer items-start gap-3">
-				<input
-					type="checkbox"
-					bind:checked={applyToAllDevices}
-					class="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-700 text-sky-500 focus:ring-sky-500 focus:ring-offset-0"
-				/>
-				<div>
-					<p class="font-medium text-slate-200">Apply to all devices</p>
-					<p class="mt-0.5 text-sm text-slate-400">
-						Also grant this user the same permission level on all {devices.length} device{devices.length !==
-						1
-							? 's'
-							: ''} in this location.
-					</p>
-				</div>
-			</label>
-		</div>
-
-		<div class="flex justify-end gap-2 pt-2">
-			<CWButton variant="ghost" onclick={() => (showAddUserDialog = false)}>Cancel</CWButton>
-			<CWButton variant="primary" loading={addingUser} onclick={addUser} disabled={!newUserEmail}>
-				Add User
-			</CWButton>
-		</div>
-	</div>
-</CWDialog>
-
-<!-- Edit User Permission Dialog -->
-<CWDialog bind:open={showEditUserDialog} title="Edit User Permission">
-	<div class="space-y-4">
-		<p class="text-sm text-slate-400">
-			Update permission level for <strong class="text-slate-200">{selectedUser?.full_name}</strong>.
-		</p>
-
-		<div>
-			<label for="edit-permission" class="mb-1 block text-sm font-medium text-slate-300"
-				>Permission Level</label
-			>
-			<select
-				id="edit-permission"
-				bind:value={editUserPermission}
-				class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-slate-100 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-			>
-				{#each permissionLevels as level (level.id)}
-					<option value={level.id}>{level.name}</option>
-				{/each}
-			</select>
-		</div>
-
-		<div class="flex justify-end gap-2 pt-2">
-			<CWButton variant="ghost" onclick={() => (showEditUserDialog = false)}>Cancel</CWButton>
-			<CWButton variant="primary" loading={editingUser} onclick={updateUserPermission}>
-				Update Permission
-			</CWButton>
-		</div>
-	</div>
-</CWDialog>
-
-<!-- Remove User Dialog -->
-<CWDialog bind:open={showRemoveUserDialog} title="Remove User">
-	<div class="space-y-4">
-		<p class="text-slate-300">
-			Are you sure you want to remove <strong class="text-slate-100"
-				>{selectedUser?.full_name}</strong
-			> from this location?
-		</p>
-		<p class="text-sm text-slate-400">
-			This will revoke their access to this location. They will no longer be able to view or manage
-			devices here.
-		</p>
-
-		<div class="flex justify-end gap-2 pt-2">
-			<CWButton variant="ghost" onclick={() => (showRemoveUserDialog = false)}>Cancel</CWButton>
-			<CWButton variant="danger" loading={removingUser} onclick={removeUser}>Remove User</CWButton>
-		</div>
-	</div>
-</CWDialog>
-
-<CWDialog bind:open={showAllUsers} title="All Users with Access">
-	<div class="space-y-4">
-		<p class="text-sm text-slate-400">List of all users who have access to this location.</p>
-
-		<ul class="space-y-3">
-			{#each users as user (user.id)}
-				<li class="flex items-center gap-3">
-					<div class="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-slate-700">
-						{#if user.avatar_url}
-							<img src={user.avatar_url} alt={user.full_name} class="h-full w-full object-cover" />
-						{:else}
-							<div
-								class="flex h-full w-full items-center justify-center bg-slate-600 text-slate-300"
-							>
-								{user.full_name.charAt(0).toUpperCase()}
-							</div>
-						{/if}
-					</div>
-					<div>
-						<p class="font-medium text-slate-200">{user.full_name}</p>
-						<p class="text-sm text-slate-400">{user.email}</p>
-					</div>
-				</li>
-			{/each}
-		</ul>
-
-		<div class="flex justify-end pt-2">
-			<CWButton variant="primary" onclick={() => (showAllUsers = false)}>Close</CWButton>
 		</div>
 	</div>
 </CWDialog>

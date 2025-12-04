@@ -14,11 +14,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		session: tokens
 	});
 
+	// if (deviceError || !device) {
+	// 	console.error('Error fetching device:', deviceError);
+	// 	throw new Error('Device not found');
+	// }
+
 	return {
-		initialHistory: points.map((p) => ({
+		initialHistory: points ? points?.map((p) => ({
 			timestamp: p.timestamp,
 			primary: p.primary,
 			secondary: p.secondary
-		}))
+		})) : [],
 	};
 };

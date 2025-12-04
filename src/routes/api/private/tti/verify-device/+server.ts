@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { TTI_API_URL, TTI_API_KEY } from '$env/static/private';
+import { PRIVATE_TTI_API_URL, PRIVATE_TTI_API_KEY } from '$env/static/private';
 
 /**
  * Verify if a device exists in The Things Industries (TTI) by its DevEUI.
@@ -43,8 +43,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		// Check if TTI configuration is available
-		if (!TTI_API_URL || !TTI_API_KEY) {
-			console.error('TTI configuration missing: TTI_API_URL or TTI_API_KEY not set');
+		if (!PRIVATE_TTI_API_URL || !PRIVATE_TTI_API_KEY) {
+			console.error('TTI configuration missing: TTI_API_URL or PRIVATE_TTI_API_KEY not set');
 			return json({ 
 				success: false, 
 				error: 'TTI integration not configured. Please contact support.',
@@ -62,7 +62,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		for (const deviceId of possibleDeviceIds) {
 			try {
-				const directUrl = `${TTI_API_URL}/api/v3/applications/${applicationId}/devices/${deviceId}`;
+				const directUrl = `${PRIVATE_TTI_API_URL}/api/v3/applications/${applicationId}/devices/${deviceId}`;
 				// TTI requires each field_mask.paths as a separate query parameter
 				const params = new URLSearchParams();
 				params.append('field_mask.paths', 'ids');
@@ -72,7 +72,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				const response = await fetch(`${directUrl}?${params}`, {
 					method: 'GET',
 					headers: {
-						'Authorization': `Bearer ${TTI_API_KEY}`,
+						'Authorization': `Bearer ${PRIVATE_TTI_API_KEY}`,
 						'Accept': 'application/json'
 					}
 				});
@@ -102,7 +102,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		// If direct lookup failed, list all devices and search locally
-		const listUrl = `${TTI_API_URL}/api/v3/applications/${applicationId}/devices`;
+		const listUrl = `${PRIVATE_TTI_API_URL}/api/v3/applications/${applicationId}/devices`;
 		// TTI requires each field_mask.paths as a separate query parameter
 		const listParams = new URLSearchParams();
 		listParams.append('field_mask.paths', 'ids');
@@ -113,7 +113,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const listResponse = await fetch(`${listUrl}?${listParams}`, {
 			method: 'GET',
 			headers: {
-				'Authorization': `Bearer ${TTI_API_KEY}`,
+				'Authorization': `Bearer ${PRIVATE_TTI_API_KEY}`,
 				'Accept': 'application/json'
 			}
 		});

@@ -2,7 +2,7 @@
 	import CWButton from './CWButton.svelte';
 	import Avatar from './Avatar.svelte';
 	import type { SupabaseClient } from '@supabase/supabase-js';
-
+	import { page } from '$app/state';
 	/**
 	 * Permission level configuration matching cw_permission_level_types table
 	 */
@@ -96,7 +96,9 @@
 
 	const ownerColors = 'bg-amber-500/20 text-amber-300 ring-amber-500/30';
 
-	const badgeClass = $derived(isOwner ? ownerColors : (roleColors[user.permission_level] ?? roleColors[1]));
+	const badgeClass = $derived(
+		isOwner ? ownerColors : (roleColors[user.permission_level] ?? roleColors[1])
+	);
 
 	async function handlePermissionChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
@@ -116,8 +118,17 @@
 		onEdit?.(user);
 	}
 
-	function handleRemove() {
-		onRemove?.(user);
+	async function handleRemove() {
+		let removedUser = await fetch('/api/private/location/delete-location-user', {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				user_id: user.user_id,
+				location_id: page.params.location_id
+			})
+		}).then((res) => res.json());
 	}
 </script>
 
@@ -129,12 +140,7 @@
 	<div class="flex items-center gap-3 min-w-0">
 		<!-- Avatar -->
 		<div class="flex-shrink-0">
-			<Avatar
-				size="md"
-				avatarUrl={user.avatar_url}
-				initials={avatarInitials}
-				{supabase}
-			/>
+			<Avatar size="md" avatarUrl={user.avatar_url} initials={avatarInitials} {supabase} />
 		</div>
 
 		<!-- Name & Email -->
@@ -148,9 +154,7 @@
 	<div class="flex items-center gap-3 flex-shrink-0 ml-4">
 		<!-- Permission Badge / Selector -->
 		{#if isOwner}
-			<span class="rounded-full px-3 py-1 text-xs font-medium ring-1 {badgeClass}">
-				Owner
-			</span>
+			<span class="rounded-full px-3 py-1 text-xs font-medium ring-1 {badgeClass}"> Owner </span>
 		{:else if inlineEdit && canEdit && !loading}
 			<select
 				value={user.permission_level}
@@ -171,16 +175,14 @@
 		<!-- Action Buttons -->
 		{#if !isOwner && !loading}
 			{#if canEdit && !inlineEdit && onEdit}
-				<CWButton variant="ghost" size="sm" onclick={handleEdit}>
-					Edit
-				</CWButton>
+				<CWButton variant="ghost" size="sm" onclick={handleEdit}>Edit</CWButton>
 			{/if}
 
 			{#if canRemove && onRemove}
 				<CWButton
 					variant="ghost"
 					size="sm"
-					onclick={handleRemove}
+					onclick={() => handleRemove()}
 					class="text-red-400 hover:text-red-300 hover:bg-red-500/10"
 				>
 					Remove
@@ -196,13 +198,7 @@
 				fill="none"
 				viewBox="0 0 24 24"
 			>
-				<circle
-					class="opacity-25"
-					cx="12"
-					cy="12"
-					r="10"
-					stroke="currentColor"
-					stroke-width="4"
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 				></circle>
 				<path
 					class="opacity-75"

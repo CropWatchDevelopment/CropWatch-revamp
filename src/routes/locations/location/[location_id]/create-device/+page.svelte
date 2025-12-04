@@ -6,6 +6,8 @@
 	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWDevEuiInput from '$lib/components/CWDevEuiInput.svelte';
 	import CWSelect from '$lib/components/CWSelect.svelte';
+	import CWPermissionRowItem from '$lib/components/CWPermissionRowItem.svelte';
+	import type { PermissionUser } from '$lib/components/CWPermissionRowItem.svelte';
 
 	// Get data from server
 	let { data, form } = $props();
@@ -21,7 +23,7 @@
 	let deviceType = $state(formData?.deviceType ?? '');
 	let serialNumber = $state('');
 	let sensorSerial = $state('');
-	let applyLocationPermissions = $state(true);
+	let applyLocationPermissions: boolean = $state<boolean>(true);
 
 	// UI state
 	let isSubmitting = $state(false);
@@ -59,6 +61,22 @@
 	// Get the count of active location users for the checkbox description
 	const locationUserCount = $derived(data.locationUsers?.length ?? 0);
 
+	// Transform location users to PermissionUser format for CWPermissionRowItem
+	const permissionUsers = $derived<PermissionUser[]>(
+		(data.locationUsers ?? []).map((locUser) => {
+			const profile = Array.isArray(locUser.profiles) ? locUser.profiles[0] : locUser.profiles;
+			return {
+				id: locUser.id?.toString() ?? '',
+				user_id: locUser.user_id ?? '',
+				full_name: profile?.full_name ?? 'Unknown',
+				email: profile?.email ?? '',
+				avatar_url: null,
+				permission_level: locUser.permission_level ?? 1,
+				is_active: locUser.is_active ?? true
+			};
+		})
+	);
+
 	// Format device type options for CWSelect
 	const deviceTypeOptions = $derived(
 		(data.deviceTypes ?? []).map(
@@ -77,11 +95,13 @@
 	);
 
 	// Get selected device type's TTI application ID
-	// const selectedTtiApplicationId = $derived(
-	// 	deviceTypeOptions.find((dt: { id: number; ttiApplicationId: string | null }) => dt.id.toString() === deviceType)
-	// 		?.ttiApplicationId ?? null
-	// );
-    let selectedTtiApplicationId = 'uri-app';
+	const selectedTtiApplicationId = $derived(
+		selectedDeviceTypeLabel
+			? deviceTypeOptions.find((dt: { value: string; ttiApplicationId: string | null }) => dt.value === deviceType)
+				?.ttiApplicationId ?? null
+			: null
+	);
+    // let selectedTtiApplicationId = $state<string | null>(null);
 
 	// Check if DevEUI has changed since last checks (for UI display)
 	const hasDevEuiChangedSinceDbCheck = $derived(
@@ -204,6 +224,10 @@
 <svelte:head>
 	<title>Add New Device - CropWatch Temp</title>
 </svelte:head>
+
+<pre>{JSON.stringify(selectedDeviceTypeLabel, null, 2)}</pre>
+<pre>{JSON.stringify(selectedTtiApplicationId, null, 2)}</pre>
+<pre>{JSON.stringify(applyLocationPermissions, null, 2)}</pre>
 
 <div class="p-6">
 	<div class="mx-auto max-w-2xl space-y-6">
@@ -913,8 +937,8 @@
 					<!-- Hidden checkbox for form submission -->
 					<input
 						type="hidden"
-						name="apply_location_permissions"
-						value={applyLocationPermissions ? 'on' : ''}
+						name="applyLocationPermissions"
+						value={applyLocationPermissions}
 					/>
 
 					{#if applyLocationPermissions && locationUserCount > 0}
@@ -923,28 +947,13 @@
 							<div
 								class="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-slate-700/50 bg-slate-800/30 p-3"
 							>
-								{#each data.locationUsers ?? [] as locUser (locUser.id)}
-									{@const profile = Array.isArray(locUser.profiles)
-										? locUser.profiles[0]
-										: locUser.profiles}
-									<div class="flex items-center gap-3 rounded-lg bg-slate-800/50 px-3 py-2">
-										<div
-											class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-purple-500 text-xs font-medium text-white"
-										>
-											{profile?.full_name?.charAt(0)?.toUpperCase() ?? '?'}
-										</div>
-										<div class="flex-1 min-w-0">
-											<p class="truncate text-sm font-medium text-slate-200">
-												{profile?.full_name ?? 'Unknown'}
-											</p>
-											<p class="truncate text-xs text-slate-400">{profile?.email ?? ''}</p>
-										</div>
-										<span
-											class="rounded-full border border-slate-600 bg-slate-700/50 px-2 py-0.5 text-xs text-slate-400"
-										>
-											Level {locUser.permission_level ?? 1}
-										</span>
-									</div>
+								{#each permissionUsers as user (user.id)}
+									<CWPermissionRowItem
+										{user}
+										supabase={data.supabase}
+										canEdit={false}
+										canRemove={false}
+									/>
 								{/each}
 							</div>
 						</div>
@@ -1175,6 +1184,7 @@
 			<input type="hidden" name="serial_number" value={serialNumber} />
 			<input type="hidden" name="sensor_serial" value={sensorSerial} />
 			<input type="hidden" name="tti_name" value={ttiDeviceInfo?.deviceId ?? ''} />
+			<input type="hidden" name="apply_location_permissions" value={applyLocationPermissions} />
 
 			<!-- Form Actions -->
 			<div class="flex items-center justify-between gap-3">

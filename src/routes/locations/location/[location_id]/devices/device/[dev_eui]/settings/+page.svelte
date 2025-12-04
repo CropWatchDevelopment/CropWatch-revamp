@@ -37,6 +37,8 @@
 	let facility: Facility | undefined = $derived(
 		appState.facilities.find((f: Facility) => f.id === device?.facilityId)
 	);
+	
+	let readyToDelete: boolean = $state(false);
 
 	// Form state - track user edits separately from source data
 	// Using class-based state for form to allow controlled initialization
@@ -122,6 +124,23 @@
 	function daysUntilExpiry(endDate: string) {
 		const diff = new Date(endDate).getTime() - new Date().getTime();
 		return Math.ceil(diff / (1000 * 60 * 60 * 24));
+	}
+
+	async function deleteDevice() {
+		// Implement device deletion logic here
+		showDeleteDialog = false;
+		const result = await fetch(`/api/private/devices/${page.params.dev_eui}`, {
+			method: 'DELETE'
+		});
+		
+		if (result.ok) {
+			// Redirect to location page after successful deletion
+			goto(`/locations/location/${device?.locationId}`);
+		} else {
+			// Handle error - could show a toast notification here
+			const error = await result.json();
+			console.error('Failed to delete device:', error);
+		}
 	}
 </script>
 
@@ -661,9 +680,20 @@
 				⚠️ This will delete all telemetry data, alerts, and reports associated with this device.
 			</p>
 		</div>
+
+		<input
+			type="checkbox"
+			bind:checked={readyToDelete}
+			id="confirmDelete"
+			class="h-4 w-4 rounded border-slate-700 bg-slate-900/50 text-red-600 focus:ring-red-500"
+		/>
+		<label for="confirmDelete" class="text-sm text-slate-300">
+			I understand that this action is irreversible and I want to permanently delete this device.
+		</label>
+
 		<div class="flex justify-end gap-3 pt-2">
 			<CWButton variant="secondary" onclick={() => (showDeleteDialog = false)}>Cancel</CWButton>
-			<CWButton variant="danger">Delete Permanently</CWButton>
+			<CWButton variant="danger" disabled={!readyToDelete} onclick={() => deleteDevice()}>Delete Permanently</CWButton>
 		</div>
 	</div>
 </CWDialog>

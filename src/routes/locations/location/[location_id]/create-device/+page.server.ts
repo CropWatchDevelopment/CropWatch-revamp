@@ -82,7 +82,7 @@ export const actions: Actions = {
 		const serialNumber = formData.get('serial_number')?.toString().trim() || null;
 		const sensorSerial = formData.get('sensor_serial')?.toString().trim() || null;
 		const ttiName = formData.get('tti_name')?.toString().trim() || null;
-		const applyLocationPermissions = formData.get('apply_location_permissions') === 'on';
+		const applyLocationPermissions = formData.get('apply_location_permissions') === 'true';
 
 		// Validation
 		if (!devEui) {
@@ -166,7 +166,7 @@ export const actions: Actions = {
 				.insert({
 					dev_eui: devEui,
 					user_id: ownerId,
-					permission_level: 4 // Admin permission for owner
+					permission_level: 1 // Admin permission for owner
 				});
 
 			if (ownerError) {

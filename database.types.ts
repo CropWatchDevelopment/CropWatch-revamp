@@ -576,7 +576,6 @@ export type Database = {
           data_table_v2: string
           decoder: string | null
           default_upload_interval: number | null
-          device_app: string | null
           id: number
           isActive: boolean
           manufacturer: string | null
@@ -600,7 +599,6 @@ export type Database = {
           data_table_v2: string
           decoder?: string | null
           default_upload_interval?: number | null
-          device_app?: string | null
           id?: number
           isActive?: boolean
           manufacturer?: string | null
@@ -624,7 +622,6 @@ export type Database = {
           data_table_v2?: string
           decoder?: string | null
           default_upload_interval?: number | null
-          device_app?: string | null
           id?: number
           isActive?: boolean
           manufacturer?: string | null
@@ -688,6 +685,7 @@ export type Database = {
           battery_changed_at: string | null
           battery_level: number | null
           dev_eui: string
+          group: string | null
           installed_at: string | null
           last_data_updated_at: string | null
           lat: number | null
@@ -709,6 +707,7 @@ export type Database = {
           battery_changed_at?: string | null
           battery_level?: number | null
           dev_eui: string
+          group?: string | null
           installed_at?: string | null
           last_data_updated_at?: string | null
           lat?: number | null
@@ -730,6 +729,7 @@ export type Database = {
           battery_changed_at?: string | null
           battery_level?: number | null
           dev_eui?: string
+          group?: string | null
           installed_at?: string | null
           last_data_updated_at?: string | null
           lat?: number | null
