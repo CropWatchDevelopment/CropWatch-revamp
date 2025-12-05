@@ -83,18 +83,16 @@
 		selectedMetric === 'temperature' ? '°C' : selectedMetric === 'humidity' ? '%' : 'ppm'
 	);
 
-	// Colors for charts
+	// Colors for charts - distinct, high contrast colors
 	const COLORS = [
-		'#38bdf8', // sky-400
-		'#34d399', // emerald-400
-		'#fbbf24', // amber-400
-		'#f472b6', // pink-400
-		'#a78bfa', // violet-400
-		'#fb923c', // orange-400
-		'#22d3ee', // cyan-400
-		'#4ade80', // green-400
-		'#e879f9', // fuchsia-400
-		'#60a5fa'  // blue-400
+		'#ef4444', // Red
+		'#22c55e', // Green
+		'#3b82f6', // Blue
+		'#eab308', // Yellow
+		'#6b7280', // Gray
+		'#ec4899', // Pink
+		'#a16207', // Brown
+		'#c084fc'  // Light Purple
 	];
 
 	// Prepare chart series from history data
@@ -502,7 +500,7 @@
 	const timeDifferenceData = $derived.by((): TimeDifferenceRow[] => {
 		if (selectedDevices.length < 2) return [];
 
-		const tolerance = 10 * 60 * 1000; // 10 minutes tolerance for matching readings
+		const tolerance = 30 * 60 * 1000; // 30 minutes tolerance for matching readings
 		
 		// Collect ALL timestamps from ALL devices
 		const allTimestampsSet = new Set<number>();
@@ -531,6 +529,7 @@
 
 			// Find value for each device at or near this timestamp
 			let baseValue: number | null = null;
+			let hasMatch = false; // Track if we have at least one comparison match
 			
 			for (let i = 0; i < selectedDevices.length; i++) {
 				const device = selectedDevices[i];
@@ -564,6 +563,7 @@
 						differences.set(device.id, diff);
 						const avg = (baseValue + value) / 2;
 						percentDiffs.set(device.id, avg !== 0 ? (diff / avg) * 100 : 0);
+						hasMatch = true; // We have at least one valid comparison
 					} else {
 						differences.set(device.id, null);
 						percentDiffs.set(device.id, null);
@@ -571,7 +571,10 @@
 				}
 			}
 
-			rows.push({ timestamp, values, differences, percentDiffs });
+			// Only include rows where we have at least one valid comparison (base + another device)
+			if (hasMatch) {
+				rows.push({ timestamp, values, differences, percentDiffs });
+			}
 		}
 
 		return rows;
@@ -621,7 +624,7 @@
 			<div class="mb-6 flex flex-wrap items-center gap-4">
 				<CWBackButton fallback="/locations" />
 				<div class="flex-1">
-					<h1 class="text-2xl font-bold text-slate-100">Compare Sensors</h1>
+					<h1 class="text-2xl font-bold text-slate-100">Compare Sensor Values</h1>
 					<p class="text-sm text-slate-400">Analyze and compare data from multiple sensors</p>
 				</div>
 				
