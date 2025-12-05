@@ -286,10 +286,10 @@
 							</span>
 						{/if}
 					</div>
-					<h1 class="text-base font-semibold text-slate-50">Temperature & humidity devices</h1>
+					<!-- <h1 class="text-base font-semibold text-slate-50">Temperature & humidity devices</h1> -->
 				</div>
 
-				<div class="flex items-center gap-3 text-xs">
+				<div class="hidden md:flex items-center gap-3 text-xs">
 					<div
 						class="flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300 ring-1 ring-emerald-500/30"
 					>
@@ -314,7 +314,7 @@
 			<div
 				class="flex flex-row items-center justify-between gap-3 border-t border-slate-800 px-6 py-3 text-xs"
 			>
-				<div class="flex flex-wrap items-center gap-3 text-slate-400">
+				<div class="hidden md:flex flex-wrap items-center gap-3 text-slate-400">
 					<span class="flex items-center gap-1">
 						<span class="font-mono text-slate-100">{total}</span>
 						<span>devices in view</span>
@@ -328,9 +328,9 @@
 						<span>offline</span>
 					</span>
 				</div>
-				<span class="flex flex-1"></span>
-				<div id="Dashboard__Overview__actions" class="flex items-center gap-3">
-					<CWButton variant="secondary" onclick={() => window.location.reload()}>
+				<div id="Dashboard__Overview__actions" class="w-full flex items-center gap-3">
+					<span class="hidden md:flex flex-1"></span>
+					<CWButton variant="secondary" class="left sm:right" onclick={() => window.location.reload()}>
 						<img src={REFRESH_ICON} alt="Refresh Icon" class="h-4 w-4" />
 						Refresh
 					</CWButton>

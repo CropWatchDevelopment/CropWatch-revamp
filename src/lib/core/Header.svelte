@@ -12,6 +12,9 @@
 	import { getContext } from 'svelte';
 	import { getToastContext } from '$lib/components/toast';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import COMPARE_ARROWS_ICON from '$lib/images/icons/compare_arrows.svg';
+	import GATEWAY_ICON from '$lib/images/icons/router.svg';
+	import REPORT_ICON from '$lib/images/icons/picture_as_pdf.svg';
 
 	const toast = getToastContext();
 
@@ -191,19 +194,7 @@
 							? 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/30'
 							: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
 					>
-						<svg
-							class="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-							/>
-						</svg>
+						<img src={REPORT_ICON} alt="Report Icon" class="h-4 w-4" />
 						Reports
 					</a>
 				</li>
@@ -216,20 +207,21 @@
 							? 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/30'
 							: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
 					>
-						<svg
-							class="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M16 3h-1a2 2 0 00-2 2v1H9V5a2 2 0 00-2-2H6a2 2 0 00-2 2v1h16V5a2 2 0 00-2-2z"
-							/>
-						</svg>
+						<img src={GATEWAY_ICON} alt="Gateway Icon" class="h-4 w-4" />
 						Gateways
+					</a>
+				</li>
+				<li>
+					<a
+						href="/compare"
+						class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all {page.url.pathname.startsWith(
+							'/compare'
+						)
+							? 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/30'
+							: 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
+					>
+						<img src={COMPARE_ARROWS_ICON} alt="Compare Icon" class="h-4 w-4" />
+						Compare
 					</a>
 				</li>
 			</ul>
