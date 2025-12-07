@@ -108,6 +108,7 @@
 		sortFn = defaultSort,
 		getRowId = defaultRowId,
 		rowHeight = 52,
+		rowMaxHeight = 64,
 		viewportHeight = 0,
 		header = undefined,
 		row = undefined,
@@ -131,6 +132,7 @@
 		sortFn?: SortFn<unknown>;
 		getRowId?: RowIdFn<unknown>;
 		rowHeight?: number;
+		rowMaxHeight?: number;
 		viewportHeight?: number;
 		header?: Snippet<[TableContext]>;
 		row?: Snippet<[unknown, number, TableContext]>;
@@ -147,6 +149,8 @@
 		loading?: boolean;
 		loadingText?: string;
 	} = $props();
+
+		rowHeight = Math.min(rowHeight, rowMaxHeight);
 
 	const columnMap = $derived.by(() => {
 		const map: Record<string, ColumnConfig> = {};
@@ -597,15 +601,18 @@
 		</div>
 	</div>
 
-	<div class="relative flex min-h-0 flex-1 overflow-hidden">
+	<div class={`relative ${virtual ? 'flex min-h-0 flex-1 overflow-hidden' : 'w-full'}`}>
 		<div
-			class="mobile-scroll-container flex h-full w-full overflow-auto"
+			class={`mobile-scroll-container w-full ${virtual ? 'flex h-full overflow-auto' : 'overflow-x-auto'}`}
 			{@attach setScrollerRef}
 			onscroll={virtual ? handleScroll : undefined}
 			bind:clientHeight={containerHeight}
 			style={virtual && viewportHeight > 0 ? `max-height:${viewportHeight}px` : ''}
 		>
-			<table class="w-full min-w-0 table-auto text-sm text-slate-100 sm:text-[11px] md:min-w-[280px]">
+			<table
+				class="w-full min-w-0 table-auto text-sm text-slate-100 sm:text-[11px] md:min-w-[280px]"
+				style={`--cw-table-row-max:${rowMaxHeight}px;`}
+			>
 				<thead class="sticky top-0 bg-slate-900/90 text-slate-300 backdrop-blur">
 					{#if header}
 						{@render header(tableContext)}
@@ -961,7 +968,10 @@
 						{/each}
 					{:else}
 						{#each paginated as item, idx (getRowId(item, (page - 1) * pageSize + idx))}
-							<tr class="border-t border-slate-900/80 odd:bg-slate-700/40 even:bg-slate-800/50 hover:bg-blue-800/70">
+							<tr
+								style={`max-height:${rowMaxHeight}px; height:auto;`}
+								class="border-t border-slate-900/80 odd:bg-slate-700/40 even:bg-slate-800/50 hover:bg-blue-800/70 overflow-hidden"
+							>
 									{#if columns.length}
 										{#each columns as col (col.key)}
 											<td
@@ -1398,4 +1408,18 @@
 			display: none !important;
 		}
 	}
-</style>
+
+		/* Desktop row cap */
+		@media (min-width: 641px) {
+			:global(.cw-table tbody tr:not(.spacer-row)) {
+				height: auto;
+				max-height: var(--cw-table-row-max, 64px);
+				overflow: hidden;
+			}
+
+			:global(.cw-table tbody tr:not(.spacer-row) td) {
+				padding-top: 0.5rem;
+				padding-bottom: 0.5rem;
+			}
+		}
+	</style>

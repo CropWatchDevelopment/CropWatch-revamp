@@ -20,7 +20,7 @@
 
 	const getAppState = getContext<() => AppState>('appState');
 	let appState = $derived(getAppState());
-	let avatarUrl = $state(appState.user?.avatar_url ?? '');
+	let avatarUrl = $derived(appState.user?.avatar_url ?? '');
 
 	let { isLoggedIn } = $props<{
 		isLoggedIn: boolean;
