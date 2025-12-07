@@ -19,6 +19,13 @@
 		data: {
 			supabase: SupabaseClient;
 			session: Session | null;
+			user: Session['user'] | null;
+			profile: {
+				id?: string;
+				full_name?: string | null;
+				avatar_url?: string | null;
+				email?: string | null;
+			} | null;
 			facilities: Facility[];
 			locations: Location[];
 			devices: Device[];
@@ -38,7 +45,9 @@
 		locations: data.locations,
 		devices: data.devices,
 		alerts: data.alerts,
-		isLoggedIn: data.isLoggedIn ?? false
+		isLoggedIn: data.isLoggedIn ?? false,
+		profile: data.profile ?? null,
+		userEmail: data.user?.email ?? null
 	});
 
 	$effect(() => {
@@ -47,6 +56,8 @@
 		appState.devices = data.devices;
 		appState.alerts = data.alerts;
 		appState.isLoggedIn = data.isLoggedIn ?? false;
+		appState.profile = data.profile ?? null;
+		appState.userEmail = data.user?.email ?? null;
 	});
 
 	// Listen for auth state changes and invalidate to refresh data
@@ -118,7 +129,12 @@
 		{/if}
 		<main class="flex min-h-0 flex-1 flex-col overflow-auto">
 			{#if appState.isLoggedIn}
-				<Header isLoggedIn={appState.isLoggedIn} />
+				<Header
+					isLoggedIn={appState.isLoggedIn}
+					profile={appState.profile}
+					userEmail={appState.userEmail}
+					supabase={data.supabase}
+				/>
 			{/if}
 			<svelte:boundary>
 				{@render children()}

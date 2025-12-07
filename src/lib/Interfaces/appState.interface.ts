@@ -9,4 +9,11 @@ export interface AppState {
     devices: Device[];
     alerts: Alert[];
     isLoggedIn: boolean;
+    profile: {
+        id?: string;
+        full_name?: string | null;
+        avatar_url?: string | null;
+        email?: string | null;
+    } | null;
+    userEmail?: string | null;
 }

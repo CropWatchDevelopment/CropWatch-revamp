@@ -7,7 +7,6 @@
 	import logo from '$lib/images/cropwatch_static.svg';
 	import LOCK_ICON from '$lib/images/icons/lock.svg';
 	import LOGOUT_ICON from '$lib/images/icons/logout.svg';
-	import ACCOUNT_CIRCLE_ICON from '$lib/images/icons/account_circle.svg';
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import { getContext } from 'svelte';
 	import { getToastContext } from '$lib/components/toast';
@@ -15,16 +14,37 @@
 	import COMPARE_ARROWS_ICON from '$lib/images/icons/compare_arrows.svg';
 	import GATEWAY_ICON from '$lib/images/icons/router.svg';
 	import REPORT_ICON from '$lib/images/icons/picture_as_pdf.svg';
+	import SETTINGS_ICON from '$lib/images/icons/settings.svg';
+	import type { SupabaseClient } from '@supabase/supabase-js';
 
 	const toast = getToastContext();
 
 	const getAppState = getContext<() => AppState>('appState');
 	let appState = $derived(getAppState());
-	let avatarUrl = $derived(appState.user?.avatar_url ?? '');
 
-	let { isLoggedIn } = $props<{
+	let { isLoggedIn, profile, userEmail, supabase } = $props<{
 		isLoggedIn: boolean;
+		profile: AppState['profile'];
+		userEmail?: string | null;
+		supabase: SupabaseClient;
 	}>();
+
+	const activeProfile = $derived(profile ?? appState.profile);
+	const activeEmail = $derived(userEmail ?? appState.userEmail ?? null);
+	let avatarUrl = $derived(activeProfile?.avatar_url ?? '');
+	let userInitials = $derived.by(() => {
+		const name = activeProfile?.full_name?.trim();
+		if (name) {
+			const parts = name.split(/\s+/).filter(Boolean);
+			const first = parts[0]?.[0] ?? '';
+			const second = parts[1]?.[0] ?? '';
+			const compact = `${first}${second}`.trim();
+			if (compact) return compact.toUpperCase();
+		}
+
+		const emailFallback = activeEmail?.[0] ?? '';
+		return emailFallback ? emailFallback.toUpperCase() : '?';
+	});
 
 	let accountMenuOpen = $state(false);
 	let accountMenuRef: HTMLDivElement | null = $state(null);
@@ -68,6 +88,8 @@
 			logoutDialog = false;
 			loggingOutLoading = false;
 			appState.isLoggedIn = false;
+			appState.profile = null;
+			appState.userEmail = null;
 			toast.success('You have been logged out.', { title: 'Logged Out' });
 		} catch (error) {
 			console.error('Logout failed:', error);
@@ -232,8 +254,14 @@
 			<div class="flex items-center gap-3">
 				<!-- Account Menu Dropdown -->
 				<div class="relative" bind:this={accountMenuRef}>
-					<CWButton variant="ghost" size="sm" onclick={toggleAccountMenu}>
-						<img src={ACCOUNT_CIRCLE_ICON} alt="Account" class="h-6 w-6" />
+					<CWButton variant="secondary" size="sm" onclick={toggleAccountMenu}>
+						<div class="h-9 w-9 overflow-hidden rounded-full bg-slate-800 ring-1 ring-slate-700">
+							<Avatar size={36} avatarUrl={avatarUrl || null} initials={userInitials} {supabase} />
+						</div>
+						<div class="flex flex-col ml-3 text-left">
+							<p class="text-md">{userEmail}</p>
+							<p class="text-center">Administrator</p>
+						</div>
 					</CWButton>
 
 					{#if accountMenuOpen}
@@ -245,37 +273,28 @@
 								onclick={closeAccountMenu}
 								class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 transition hover:bg-slate-700 hover:text-white"
 							>
-								<Avatar
-									size="24"
-									sourceUrl={appState.user?.avatar_url || null}
-									initials={appState.user
-										? `${appState.user.first_name?.charAt(0) || ''}${
-												appState.user.last_name?.charAt(0) || ''
-											}`
-										: ''}
-								/>
+								<img src={SETTINGS_ICON} alt="Settings Icon" class="h-4 w-4" />
 								Account Settings
 							</a>
+							<CWButton variant="secondary" class="w-full mt-5" size="sm" onclick={() => (logoutDialog = true)}>
+								<svg
+									class="h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+									/>
+								</svg>
+								<span class="hidden sm:inline">Log Out</span>
+							</CWButton>
 						</div>
 					{/if}
 				</div>
-
-				<CWButton variant="secondary" size="sm" onclick={() => (logoutDialog = true)}>
-					<svg
-						class="h-4 w-4"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-						/>
-					</svg>
-					<span class="hidden sm:inline">Log Out</span>
-				</CWButton>
 			</div>
 		{/if}
 	</div>

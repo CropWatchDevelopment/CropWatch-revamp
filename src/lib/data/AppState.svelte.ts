@@ -14,7 +14,9 @@ export function createAppState(initial: AppState) {
 		locations: initial.locations ?? [],
 		devices: initial.devices ?? [],
 		alerts: initial.alerts ?? [],
-		isLoggedIn: initial.isLoggedIn ?? false
+		isLoggedIn: initial.isLoggedIn ?? false,
+		profile: initial.profile ?? null,
+		userEmail: initial.userEmail ?? null
 	});
 
 	return appState;

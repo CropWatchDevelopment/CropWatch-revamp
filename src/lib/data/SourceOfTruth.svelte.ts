@@ -378,7 +378,16 @@ export async function loadInitialAppState(
 		limit: 1000,
 		session
 	});
-	return { devices, alerts, locations, facilities, nextCursor, isLoggedIn: !!session };
+	return {
+		devices,
+		alerts,
+		locations,
+		facilities,
+		nextCursor,
+		isLoggedIn: !!session,
+		profile: null,
+		userEmail: null
+	};
 }
 
 export type DeviceHistoryPoint = {
