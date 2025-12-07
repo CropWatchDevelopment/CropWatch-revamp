@@ -10,6 +10,7 @@
 		description: string | null;
 		lat: number | null;
 		long: number | null;
+		group: string;
 		created_at: string;
 		owner_id: string | null;
 		owner_name: string | null;
@@ -34,6 +35,12 @@
 			label: 'Location',
 			type: 'stacked' as const,
 			secondaryKey: 'description'
+		},
+		{
+			key: 'group',
+			label: 'Group',
+			type: 'text' as const,
+			tdClass: 'text-slate-300'
 		},
 		{
 			key: 'owner_name',

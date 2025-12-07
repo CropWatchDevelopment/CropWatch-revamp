@@ -20,6 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			description,
 			lat,
 			long,
+			group,
 			created_at,
 			owner_id,
 			owner:profiles!cw_locations_owner_id_fkey (
@@ -47,6 +48,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				description,
 				lat,
 				long,
+				group,
 				created_at,
 				owner_id,
 				owner:profiles!cw_locations_owner_id_fkey (
@@ -97,6 +99,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		description: string | null;
 		lat: number | null;
 		long: number | null;
+		group: string;
 		created_at: string;
 		owner_id: string | null;
 		owner_name: string | null;
@@ -119,6 +122,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			description: loc.description,
 			lat: loc.lat,
 			long: loc.long,
+			group: loc.group ?? 'Ungrouped',
 			created_at: loc.created_at,
 			owner_id: loc.owner_id,
 			owner_name: owner?.full_name || null,
@@ -144,6 +148,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				description: loc.description,
 				lat: loc.lat,
 				long: loc.long,
+				group: loc.group ?? 'Ungrouped',
 				created_at: loc.created_at,
 				owner_id: loc.owner_id,
 				owner_name: owner?.full_name || null,
@@ -155,9 +160,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	const locations = Array.from(locationsMap.values()).sort((a, b) => 
-		new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-	);
+	const locations = Array.from(locationsMap.values()).sort((a, b) => {
+		const groupA = (a.group ?? '').toLowerCase();
+		const groupB = (b.group ?? '').toLowerCase();
+		if (groupA !== groupB) return groupA.localeCompare(groupB);
+		return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+	});
 
 	return {
 		session,

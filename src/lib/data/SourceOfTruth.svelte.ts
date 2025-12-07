@@ -89,20 +89,31 @@ function normalizeTemperature(kind: string | null | undefined, value: number | n
 	return value;
 }
 
+function getGroupKey(group: string | null): string {
+	const normalized = group?.trim();
+	return normalized && normalized.length > 0 ? normalized.toLowerCase() : 'ungrouped';
+}
+
 function mapFacility(loc: LocationRow): Facility {
-	const id = loc.owner_id ? String(loc.owner_id) : `facility-${loc.location_id}`;
+	const group = loc.group ?? null;
+	const id = getGroupKey(group);
+	const display = group?.trim() || 'Ungrouped';
+	const code = display.slice(0, 3).toUpperCase();
 	return {
 		id,
-		name: `Facility ${id}`,
-		code: `F-${id.slice(0, 4)}`
+		name: display,
+		code
 	};
 }
 
 function mapLocation(loc: LocationRow): Location {
+	const group = loc.group ?? null;
+	const groupKey = getGroupKey(group);
 	return {
 		id: String(loc.location_id),
 		name: loc.name ?? 'Unknown location',
-		facilityId: loc.owner_id ? String(loc.owner_id) : `facility-${loc.location_id}`
+		facilityId: groupKey,
+		group
 	};
 }
 
@@ -155,12 +166,13 @@ function mapDevice(row: DeviceJoined): Device {
 	const loc = row.location;
 	const lastSeen = row.last_data_updated_at ?? row.installed_at ?? '';
 	const status = computeStatus(lastSeen, row.upload_interval, deviceType?.default_upload_interval);
+	const groupKey = loc ? getGroupKey(loc.group ?? null) : 'ungrouped';
 
 	return {
 		id: row.dev_eui,
 		name: row.name,
 		locationId: loc ? String(loc.location_id) : 'unknown',
-		facilityId: loc?.owner_id ? String(loc.owner_id) : `facility-${loc?.location_id ?? 'unknown'}`,
+		facilityId: groupKey,
 		temperatureC: temperatureC ?? 0,
 		humidity: humidity ?? 0,
 		co2: co2 ?? null,
@@ -311,7 +323,7 @@ export async function fetchDevicePage({
 				'last_data_updated_at',
 				'installed_at',
 				'type',
-				'location:cw_locations(location_id,name,lat,long,owner_id)',
+				'location:cw_locations(location_id,name,lat,long,owner_id,group)',
 				'device_type:cw_device_type(primary_data_v2,secondary_data_v2,primary_data_notation,secondary_data_notation,default_upload_interval)',
 				'alerts:cw_rules(*)'
 			].join(',')

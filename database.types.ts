@@ -882,6 +882,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          group: string | null
           lat: number | null
           location_id: number
           long: number | null
@@ -892,6 +893,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          group?: string | null
           lat?: number | null
           location_id?: number
           long?: number | null
@@ -902,6 +904,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          group?: string | null
           lat?: number | null
           location_id?: number
           long?: number | null

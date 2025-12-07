@@ -243,7 +243,7 @@
 			const location = getLocation(d.locationId);
 			return {
 				...d,
-				facilityName: facility?.name ?? 'Unknown facility',
+				facilityName: facility?.name ?? 'Unknown group',
 				locationName: location?.name ?? 'Unknown location'
 			};
 		})
@@ -272,11 +272,11 @@
 			<div class="flex items-center justify-between px-6 py-3">
 				<div class="flex flex-col gap-1">
 					<div class="flex items-center gap-2 text-xs text-slate-400">
-						<span>Facility</span>
+						<span>Group</span>
 						<span class="text-slate-600">/</span>
 						<span class="truncate">
 							{selectedFacilityId === 'all'
-								? 'All facilities'
+								? 'All groups'
 								: (getFacility(selectedFacilityId)?.name ?? 'Unknown')}
 						</span>
 						{#if selectedLocationId !== 'all'}
@@ -488,7 +488,7 @@
 
 							<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
 								<div class="flex items-center justify-between text-xs text-slate-400">
-									<span>Top facilities</span>
+									<span>Top groups</span>
 									<span class="text-slate-200">In view</span>
 								</div>
 								<div class="mt-3 space-y-2 text-xs text-slate-200">

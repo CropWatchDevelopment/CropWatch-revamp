@@ -202,7 +202,7 @@
 				<input
 					bind:value={search}
 					class="flex-1 border-none bg-transparent text-sm outline-none placeholder:text-slate-400"
-					placeholder="Search facility, location, device…"
+					placeholder="Search group, location, device…"
 				/>
 				{#if search}
 					<button
@@ -219,11 +219,11 @@
 			</div>
 		</div>
 
-		<!-- Facilities & Locations -->
+		<!-- Groups & Locations -->
 		<div class="flex flex-1 min-h-0 flex-col gap-3">
-			<!-- Facilities -->
+			<!-- Groups -->
 			<div class="flex flex-1 min-h-0 flex-col">
-				<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Facilities</h2>
+				<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Groups</h2>
 				<div class="mt-2 flex-1 space-y-1 overflow-y-auto pr-1 text-sm">
 					<button
 						onclick={() => {
@@ -240,7 +240,7 @@
 							>
 								all
 							</span>
-							<span>All facilities</span>
+							<span>All groups</span>
 						</span>
 						<span class="text-xs text-slate-400">{devices?.length}</span>
 					</button>
@@ -274,7 +274,7 @@
 						</button>
 					{:else}
 						{#if searchTerm}
-							<p class="px-2 py-3 text-center text-xs text-slate-500">No facilities match "{search}"</p>
+							<p class="px-2 py-3 text-center text-xs text-slate-500">No groups match "{search}"</p>
 						{/if}
 					{/each}
 				</div>
