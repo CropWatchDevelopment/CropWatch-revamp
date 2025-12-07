@@ -12,22 +12,31 @@
 	import DOWNLOAD_ICON from '$lib/images/icons/download.svg';
 	import SAVE_ICON from '$lib/images/icons/save.svg';
 	import CWCopy from '$lib/components/CWCopy.svelte';
-	import CWPermissionRowItem, { type PermissionUser } from '$lib/components/CWPermissionRowItem.svelte';
+	import CWDevicePermissionItem from '$lib/components/CWDevicePermissionItem.svelte';
+	import type { PermissionUser } from '$lib/components/CWPermissionRowItem.svelte';
 	import type { SupabaseClient } from '@supabase/supabase-js';
 
 	interface Props {
 		data: {
 			supabase: SupabaseClient;
+			deviceOwners: {
+				user_id: string;
+				permission_level: number;
+				profiles: { id: string; full_name: string; email: string; avatar_url?: string | null } | null;
+			}[];
+			device: Partial<Device> | null;
 		};
 	}
 
 	let { data }: Props = $props();
 
+	const currentUserId = $derived(page.data?.session?.user?.id ?? '');
+
 	const getAppState = getContext<() => AppState>('appState');
 	let appState = $derived(getAppState());
 
 	let device: Device | undefined = $derived(
-		appState.devices.find((d: Device) => d.id === page.params.dev_eui)
+		appState.devices.find((d: Device) => d.id === page.params.dev_eui) ?? (data.device as Device | undefined)
 	);
 
 	let location: Location | undefined = $derived(
@@ -68,14 +77,13 @@
 	let showDeleteDialog = $state(false);
 	let showTransferDialog = $state(false);
 
-	// Mock device info - in real app this would come from API
 	const deviceInfo = $derived({
-		type: 'Cold Chain TH-01',
-		manufacturer: 'CropWatch Technologies',
-		model: 'CW-TH-01-PRO',
+		type: 'Device',
+		manufacturer: 'CropWatch',
+		model: device?.deviceType ?? 'Unknown',
 		firmwareVersion: '2.4.1',
 		hardwareVersion: '1.2',
-		serialNumber: device?.id ?? 'Unknown',
+		serialNumber: device?.id ?? device?.devEUI ?? 'Unknown',
 		batteryLastChanged: '2024-08-15',
 		warrantyStart: '2024-01-01',
 		warrantyEnd: '2027-01-01',
@@ -84,22 +92,29 @@
 		nextCalibration: '2025-06-01'
 	});
 
-	// Mock user permissions - using PermissionUser interface
-	let permissions = $state<PermissionUser[]>([
-		{ id: '1', user_id: 'u1', full_name: 'John Smith', email: 'john@example.com', permission_level: 4, avatar_url: null },
-		{ id: '2', user_id: 'u2', full_name: 'Sarah Connor', email: 'sarah@example.com', permission_level: 3, avatar_url: null },
-		{ id: '3', user_id: 'u3', full_name: 'Mike Wilson', email: 'mike@example.com', permission_level: 1, avatar_url: null }
-	]);
+	const devicePermissionUsers = $derived<PermissionUser[]>(
+		(data.deviceOwners || []).map((owner) => ({
+			id: owner.user_id,
+			user_id: owner.user_id,
+			full_name: owner.profiles?.full_name ?? 'Unknown user',
+			email: owner.profiles?.email ?? '',
+			avatar_url: owner.profiles?.avatar_url ?? null,
+			permission_level: (owner.permission_level as 1 | 2 | 3 | 4) ?? 4
+		}))
+	);
 
-	// Owner user (first user in mock data)
-	const ownerId = 'u1';
+	let permissions = $state<PermissionUser[]>([]);
 
-	const roleColors: Record<string, string> = {
-		owner: 'bg-purple-500/20 text-purple-300 ring-purple-500/30',
-		admin: 'bg-sky-500/20 text-sky-300 ring-sky-500/30',
-		editor: 'bg-emerald-500/20 text-emerald-300 ring-emerald-500/30',
-		viewer: 'bg-slate-500/20 text-slate-300 ring-slate-500/30'
-	};
+	$effect(() => {
+		permissions = devicePermissionUsers;
+	});
+
+	const currentDevicePermissionLevel = $derived(
+		permissions.find((p) => p.user_id === currentUserId)?.permission_level ?? 4
+	);
+
+	const canEditDevice = $derived(currentDevicePermissionLevel <= 2);
+	const canAdminDevice = $derived(currentDevicePermissionLevel === 1);
 
 	async function handleSaveGeneral() {
 		isSaving = true;
@@ -107,6 +122,29 @@
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 		isSaving = false;
 		// Show success toast here
+	}
+
+	async function handlePermissionChange(user: PermissionUser, newLevel: number) {
+		if (!canEditDevice) return;
+		isSaving = true;
+		try {
+			const { error } = await data.supabase
+				.from('cw_device_owners')
+				.update({ permission_level: newLevel })
+				.eq('dev_eui', page.params.dev_eui)
+				.eq('user_id', user.user_id);
+
+			if (error) {
+				console.error('Error updating device permission:', error);
+				return;
+			}
+
+			permissions = permissions.map((p) =>
+				p.user_id === user.user_id ? { ...p, permission_level: newLevel as 1 | 2 | 3 | 4 } : p
+			);
+		} finally {
+			isSaving = false;
+		}
 	}
 
 	function formatDate(dateString: string) {
@@ -173,6 +211,7 @@
 							id="deviceName"
 							type="text"
 							bind:value={form.deviceName}
+							disabled={!canEditDevice}
 							class="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-colors focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
 							placeholder="Enter device name"
 						/>
@@ -185,6 +224,7 @@
 						<select
 							id="location"
 							bind:value={form.locationId}
+							disabled={!canEditDevice}
 							class="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-100 transition focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
 						>
 							{#each appState.locations as loc (loc.id)}
@@ -197,10 +237,14 @@
 					</div>
 
 					<div class="flex justify-end pt-2">
-						<CWButton variant="primary" onclick={handleSaveGeneral} loading={isSaving}>
-							<img src={SAVE_ICON} alt="Save" class="h-4 w-4 mr-1" />
-							Save Changes
-						</CWButton>
+						{#if canEditDevice}
+							<CWButton variant="primary" onclick={handleSaveGeneral} loading={isSaving}>
+								<img src={SAVE_ICON} alt="Save" class="h-4 w-4 mr-1" />
+								Save Changes
+							</CWButton>
+						{:else}
+							<span class="text-xs text-slate-500">Editor or Admin access required to edit settings</span>
+						{/if}
 					</div>
 				</div>
 			</section>
@@ -212,38 +256,23 @@
 						<h2 class="text-lg font-semibold text-white">User Permissions</h2>
 						<p class="mt-1 text-sm text-slate-400">Manage who can access this device</p>
 					</div>
-					<CWButton variant="secondary" size="sm">
-						<svg
-							class="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-						</svg>
-						Add User
-					</CWButton>
 				</div>
 
 				<div class="mt-6 space-y-3">
 					<svelte:boundary>
 						{#each permissions as user (user.id)}
-							<CWPermissionRowItem
-								{user}
+							<CWDevicePermissionItem
+								user={user}
 								supabase={data.supabase}
-								isOwner={user.user_id === ownerId}
-								inlineEdit={true}
-								canEdit={user.user_id !== ownerId}
-								canRemove={user.user_id !== ownerId}
-								onPermissionChange={async (u, newLevel) => {
-									permissions = permissions.map((p) => 
-										p.id === u.id ? { ...p, permission_level: newLevel } : p
-									);
-								}}
-								onRemove={(u) => {
-									permissions = permissions.filter((p) => p.id !== u.id);
-								}}
+								currentUserId={currentUserId}
+								currentUserPermissionLevel={currentDevicePermissionLevel as 1 | 2 | 3 | 4}
+								permissionLevels={[
+									{ id: 1, name: 'Admin', description: 'Full control for this device.' },
+									{ id: 2, name: 'Editor', description: 'Can rename and create alerts/reports.' },
+									{ id: 3, name: 'User', description: 'View only.' },
+									{ id: 4, name: 'Disabled', description: 'No access.' }
+								]}
+								onPermissionChange={handlePermissionChange}
 							/>
 						{/each}
 						{#snippet failed(error, reset)}

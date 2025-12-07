@@ -5,7 +5,7 @@
 	import type { Location } from '$lib/Interfaces/location.interface';
 	import LOCATION_ICON from '$lib/images/icons/location.svg';
 	import GLOBE_LOCATION_PIN_ICON from '$lib/images/icons/globe_location_pin.svg';
-	import MORE_VERT_ICON from '$lib/images/icons/more_vert.svg';
+	import SETTINGS_ICON from '$lib/images/icons/settings.svg';
 	import EYE_ICON from '$lib/images/icons/eye.svg';
 	import { goto } from '$app/navigation';
 
@@ -330,10 +330,10 @@
 								</span>
 							</button>
 							<button
-								class="hidden group-hover:flex px-1 text-slate-400 hover:text-slate-200"
+								class="hidden group-hover:flex bg-blue-800 p-2 text-slate-400 hover:text-slate-200"
 								onclick={() => goto(`/locations/location/${loc.id}`)}
 							>
-								<img src={MORE_VERT_ICON} alt="More options icon" class="h-4 w-4" />
+								<img src={SETTINGS_ICON} alt="More options icon" class="h-4 w-4" />
 							</button>
 						</span>
 					{:else}

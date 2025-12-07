@@ -9,6 +9,7 @@
 	import type { AppState } from '$lib/Interfaces/appState.interface';
 	import { createAppState, provideAppState, useAppState } from '$lib/data/AppState.svelte';
 	import { setContext, type Snippet } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { CWToastContainer, createToastContext } from '$lib/components/toast';
 	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -64,10 +65,28 @@
 	let selectedFacilityId = $state<string | 'all'>('all');
 	let selectedLocationId = $state<string | 'all'>('all');
 
-	// Share selection with child pages
+	const filterSubscribers = new SvelteSet<
+		(payload: { facility: string | 'all'; location: string | 'all' }) => void
+	>();
+
+	function notifyFilters() {
+		const payload = { facility: selectedFacilityId, location: selectedLocationId };
+		filterSubscribers.forEach((run) => run(payload));
+	}
+
+	$effect(() => {
+		notifyFilters();
+	});
+
+	// Share selection with child pages and keep them reactive
 	setContext('filters', {
 		getFacility: () => selectedFacilityId,
-		getLocation: () => selectedLocationId
+		getLocation: () => selectedLocationId,
+		subscribe(run: (payload: { facility: string | 'all'; location: string | 'all' }) => void) {
+			filterSubscribers.add(run);
+			run({ facility: selectedFacilityId, location: selectedLocationId });
+			return () => filterSubscribers.delete(run);
+		}
 	});
 
 	const locationsForFacility = $derived(

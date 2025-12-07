@@ -22,6 +22,7 @@
 	let { data } = $props();
 	const location = $derived<Location>(data.location);
 	const supabase = $derived(data.supabase);
+	const currentUserId = $derived(data.session?.user?.id ?? '');
 
 	// Get location ID from route params
 	const locationId = $derived($page.params.location_id);
@@ -45,6 +46,13 @@
 			return true;
 		});
 	});
+
+	const currentLocationPermissionLevel = $derived(
+		locationPermissions.find((p) => p.user_id === currentUserId)?.permission_level ?? 4
+	);
+
+	const canManageLocationSettings = $derived(currentLocationPermissionLevel <= 2);
+	const canAddOrRemoveDevices = $derived(currentLocationPermissionLevel === 1);
 
 	// Mock data - replace with actual data fetching
 	let locationName = $state(location.name ?? 'Location name not set');
@@ -132,6 +140,7 @@
 
 	// Functions
 	function startEditSettings() {
+		if (!canManageLocationSettings) return;
 		editName = locationName;
 		editDescription = locationDescription;
 		isEditingSettings = true;
@@ -425,7 +434,7 @@
 		<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
 			<div class="mb-4 flex items-center justify-between">
 				<h2 class="text-lg font-semibold text-slate-100">Location Settings</h2>
-				{#if !isEditingSettings}
+				{#if !isEditingSettings && canManageLocationSettings}
 					<CWButton variant="ghost" size="sm" onclick={startEditSettings}>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -503,23 +512,27 @@
 		<div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
 			<div class="mb-4 flex items-center justify-between">
 				<h2 class="text-lg font-semibold text-slate-100">Devices</h2>
-				<CWButton
-					variant="primary"
-					size="sm"
-					onclick={() => goto(resolve(`/locations/location/${locationId}/create-device`))}
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-4 w-4"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-						stroke-width="2"
+				{#if canAddOrRemoveDevices}
+					<CWButton
+						variant="primary"
+						size="sm"
+						onclick={() => goto(resolve(`/locations/location/${locationId}/create-device`))}
 					>
-						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-					</svg>
-					Add Device
-				</CWButton>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+						</svg>
+						Add Device
+					</CWButton>
+				{:else}
+					<span class="text-xs text-slate-500">Admin access required to add devices</span>
+				{/if}
 			</div>
 
 			<svelte:boundary>
@@ -597,8 +610,10 @@
 				{supabase}
 				locationId={parseInt(locationId ?? '0')}
 				permissions={locationPermissions}
-				canEdit={true}
-				canRemove={true}
+				currentUserId={currentUserId}
+				currentUserPermissionLevel={currentLocationPermissionLevel}
+				canEdit={canManageLocationSettings}
+				canRemove={canAddOrRemoveDevices}
 				onPermissionsChange={async () => {
 					await invalidate('location:permissions');
 				}}

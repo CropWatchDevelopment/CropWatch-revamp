@@ -25,12 +25,26 @@
 	let appState = $derived(getAppState());
 
 	// Receive sidebar selections from layout context
-	const filters = getContext<{
+	type FiltersContext = {
 		getFacility: () => string | 'all';
 		getLocation: () => string | 'all';
-	}>('filters');
-	let selectedFacilityId = $derived(filters.getFacility());
-	let selectedLocationId = $derived(filters.getLocation());
+		subscribe?: (
+			run: (payload: { facility: string | 'all'; location: string | 'all' }) => void
+		) => () => void;
+	};
+
+	const filters = getContext<FiltersContext>('filters');
+	let selectedFacilityId = $state<string | 'all'>(filters?.getFacility?.() ?? 'all');
+	let selectedLocationId = $state<string | 'all'>(filters?.getLocation?.() ?? 'all');
+
+	onMount(() => {
+		if (!filters?.subscribe) return;
+		const unsubscribe = filters.subscribe(({ facility, location }) => {
+			selectedFacilityId = facility;
+			selectedLocationId = location;
+		});
+		return () => unsubscribe?.();
+	});
 	let tableLoading: boolean = $state<boolean>(false);
 	let showAlertPanel = persisted('showAlertPanel', { open: true });
 

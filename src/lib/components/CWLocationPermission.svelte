@@ -7,6 +7,7 @@
 	import CWButton from './CWButton.svelte';
 	import CWDialog from './CWDialog.svelte';
 	import CWAddUserDialog from './CWAddUserDialog.svelte';
+	import CWLocationPermissionItem from './CWLocationPermissionItem.svelte';
 
 	/**
 	 * Location permission object from the database
@@ -30,6 +31,10 @@
 		locationId: number;
 		/** Current permissions for this location */
 		permissions: LocationPermission[];
+		/** Current viewer user id (for gating) */
+		currentUserId?: string;
+		/** Current viewer permission level for this location */
+		currentUserPermissionLevel?: number;
 		/** Available permission levels */
 		permissionLevels?: PermissionLevel[];
 		/** Whether the current user can edit permissions */
@@ -44,6 +49,8 @@
 		supabase,
 		locationId,
 		permissions = [],
+		currentUserId = '',
+		currentUserPermissionLevel = undefined,
 		permissionLevels = [
 			{ id: 1, name: 'Admin' },
 			{ id: 2, name: 'Editor' },
@@ -67,6 +74,16 @@
 	// Form states for edit/remove dialogs
 	let selectedUser = $state<PermissionUser | null>(null);
 	let editUserPermission = $state(1);
+
+	const viewerPermissionLevel = $derived(
+		currentUserPermissionLevel ??
+			(currentUserId
+				? permissions.find((p) => p.user_id === currentUserId)?.permission_level ?? 4
+				: 4)
+	);
+
+	const canManagePermissions = $derived(canEdit && viewerPermissionLevel <= 2);
+	const canRemoveUsers = $derived(canRemove && viewerPermissionLevel <= 1);
 
 	// Transform permissions to PermissionUser format
 	const permissionUsers = $derived<PermissionUser[]>(
@@ -177,7 +194,7 @@
 			<h3 class="text-lg font-semibold text-slate-100">Permissions</h3>
 			<p class="mt-1 text-sm text-slate-400">Manage user access to this location</p>
 		</div>
-		{#if canEdit}
+		{#if canManagePermissions}
 			<CWButton variant="primary" size="sm" onclick={() => (showAddUserDialog = true)}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -223,16 +240,25 @@
 	{:else}
 		<div class="space-y-2">
 			{#each permissionUsers as user (user.user_id)}
-				<CWPermissionRowItem
-					{user}
+				<CWLocationPermissionItem
+					user={user}
 					{supabase}
-					{permissionLevels}
-					{canEdit}
-					{canRemove}
-					inlineEdit={canEdit}
+					currentUserId={currentUserId}
+					currentUserPermissionLevel={viewerPermissionLevel}
+					permissionLevels={permissionLevels.map((p) => ({
+						id: p.id as 1 | 2 | 3 | 4,
+						name: p.name,
+						description:
+							p.id === 1
+								? 'Full control. Can add/remove devices and manage members.'
+							: p.id === 2
+								? 'Can edit names, alerts, and reports. Cannot move or delete devices.'
+							: p.id === 3
+								? 'View-only access.'
+							: 'No access.'
+					}))}
 					onPermissionChange={handlePermissionChange}
-					onEdit={openEditUserDialog}
-					onRemove={openRemoveUserDialog}
+					onRemove={canRemoveUsers ? openRemoveUserDialog : undefined}
 				/>
 			{/each}
 		</div>

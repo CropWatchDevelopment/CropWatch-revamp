@@ -171,7 +171,7 @@
 	{#if error}
 		<p id="{selectId}-error" class="text-sm text-red-400">{error}</p>
 	{:else if helpText}
-		<p id="{selectId}-help" class="text-sm text-slate-400">{helpText}</p>
+		<!-- <p id="{selectId}-help" class="text-sm text-slate-400">{helpText}</p> -->
 	{/if}
 </div>
 

@@ -121,7 +121,7 @@
 		sortKey = $bindable(''),
 		sortDir = $bindable<SortDir>('asc'),
 		virtual = $bindable(false),
-		class: className = 'text-xs text-slate-200',
+		class: className = 'text-sm text-slate-100',
 		loading = false,
 		loadingText = 'Loading...'
 	}: {
@@ -526,7 +526,7 @@
 					id="table-search"
 					value={search}
 					oninput={(event) => setSearch(event.currentTarget.value)}
-					class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 shadow-sm outline-none ring-1 ring-slate-800 focus:border-sky-500 focus:ring-sky-500 sm:w-64"
+					class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-base text-slate-100 shadow-sm outline-none ring-1 ring-slate-800 focus:border-sky-500 focus:ring-sky-500 sm:w-64"
 					placeholder="Search rows..."
 				/>
 				{#if search}
@@ -546,7 +546,7 @@
 			{#if !isMobile}
 				<button
 					type="button"
-					class={`virtual-toggle inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] sm:gap-2 sm:px-3 sm:py-1.5 sm:text-[11px] transition ${
+					class={`virtual-toggle inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm transition ${
 						virtual
 							? 'border-sky-500/70 bg-sky-500/10 text-sky-200'
 							: 'border-slate-700 bg-slate-900 text-slate-200 hover:border-slate-600'
@@ -561,7 +561,7 @@
 			<label class="hidden sm:flex items-center gap-2 text-slate-400">
 				<span>Page size</span>
 				<select
-					class="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+					class="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-100 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
 					onchange={(event) => setPageSize(Number(event.currentTarget.value))}
 					value={pageSize}
 				>
@@ -574,7 +574,7 @@
 			</label>
 
 			{#if (sortKey || hasActiveFilters) && !isMobile}
-				<div class="flex flex-wrap items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900/70 px-2 py-1 text-[9px] sm:gap-2 sm:text-[11px] text-slate-200">
+				<div class="flex flex-wrap items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900/70 px-2 py-1 text-xs sm:gap-2 sm:text-sm text-slate-200">
 					{#if sortKey}
 						<span class="inline-flex items-center gap-1 rounded bg-sky-500/15 px-1.5 py-0.5 sm:px-2 text-sky-200">
 							{sortKey} {sortDir === 'asc' ? '↑' : '↓'}
@@ -595,7 +595,7 @@
 				</div>
 			{/if}
 
-			<div class="ml-auto text-[10px] sm:ml-0 sm:text-xs text-slate-400">
+			<div class="ml-auto text-xs sm:ml-0 sm:text-sm text-slate-400">
 				{visibleStart}–{visibleEnd} of {total}
 			</div>
 		</div>
@@ -610,14 +610,14 @@
 			style={virtual && viewportHeight > 0 ? `max-height:${viewportHeight}px` : ''}
 		>
 			<table
-				class="w-full min-w-0 table-auto text-sm text-slate-100 sm:text-[11px] md:min-w-[280px]"
+				class="w-full min-w-0 table-auto text-sm text-slate-50 md:text-base md:min-w-[320px]"
 				style={`--cw-table-row-max:${rowMaxHeight}px;`}
 			>
 				<thead class="sticky top-0 bg-slate-900/90 text-slate-300 backdrop-blur">
 					{#if header}
 						{@render header(tableContext)}
 					{:else if columns.length}
-						<tr class="border-b border-slate-800 text-[10px] md:text-[11px] uppercase tracking-wide">
+						<tr class="border-b border-slate-800 text-xs md:text-sm uppercase tracking-wide">
 							{#each columns as col (col.key)}
 								<th class={`relative px-2 md:px-3 py-2 ${alignClass(col.align)}`} style={col.width ?? ''}>
 									<button
@@ -803,20 +803,20 @@
 															{@const primary = getColumnValue(item, col)}
 															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
 															<div class="flex flex-col text-left">
-																<span class="text-slate-50">{primary}</span>
+																<span class="text-base font-semibold text-slate-50">{primary}</span>
 																{#if secondary}
-																	<span class="text-[11px] text-slate-400">{secondary}</span>
+																	<span class="text-sm text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-[11px] text-slate-400">
+															<span class="font-mono text-sm text-slate-400">
 																{raw ? new Date(raw as string).toLocaleString() : ''}
 															</span>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}
-																<span class="font-mono text-[13px] text-slate-50">
+																<span class="font-mono text-base text-slate-50 font-medium">
 																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
 																</span>
 															{:else if col.type === 'buttons' && col.buttons?.length}
@@ -884,20 +884,20 @@
 															{@const primary = getColumnValue(item, col)}
 															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
 															<div class="flex flex-col text-left">
-																<span class="text-slate-50 text-lg">{primary}</span>
+																<span class="text-lg font-semibold text-slate-50 md:text-xl">{primary}</span>
 																{#if secondary}
-																	<span class="text-[11px] text-slate-400">{secondary}</span>
+																	<span class="text-sm text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-md text-slate-400">
+															<span class="font-mono text-sm text-slate-300 md:text-base">
 																{raw ? new Date(raw as string).toLocaleString() : ''}
 															</span>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}
-																<span class="font-mono text-lg text-slate-50">
+																<span class="font-mono text-base text-slate-50 md:text-lg font-medium">
 																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
 																</span>
 															{:else if col.type === 'buttons' && col.buttons?.length}
@@ -1005,20 +1005,20 @@
 															{@const primary = getColumnValue(item, col)}
 															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
 															<div class="flex flex-col text-left">
-																<span class="text-slate-50">{primary}</span>
+																<span class="text-base font-semibold text-slate-50">{primary}</span>
 																{#if secondary}
-																	<span class="text-[11px] text-slate-400">{secondary}</span>
+																	<span class="text-sm text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-[11px] text-slate-400">
+															<span class="font-mono text-sm text-slate-400">
 																{raw ? new Date(raw as string).toLocaleString() : ''}
 															</span>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}
-																<span class="font-mono text-[13px] text-slate-50">
+																<span class="font-mono text-base text-slate-50 font-medium">
 																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
 																</span>
 															{:else if col.type === 'buttons' && col.buttons?.length}
@@ -1086,20 +1086,20 @@
 															{@const primary = getColumnValue(item, col)}
 															{@const secondary = (item as Record<string, unknown>)[col.secondaryKey ?? '']}
 															<div class="flex flex-col text-left">
-																<span class="text-slate-50">{primary}</span>
+																<span class="text-base font-semibold text-slate-50">{primary}</span>
 																{#if secondary}
-																	<span class="text-[11px] text-slate-400">{secondary}</span>
+																	<span class="text-sm text-slate-400">{secondary}</span>
 																{/if}
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-[11px] text-slate-400">
+															<span class="font-mono text-sm text-slate-300 md:text-base">
 																{raw ? new Date(raw as string).toLocaleString() : ''}
 															</span>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}
-																<span class="font-mono text-[13px] text-slate-50">
+																<span class="font-mono text-base text-slate-50 font-medium">
 																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
 																</span>
 															{:else if col.type === 'buttons' && col.buttons?.length}
@@ -1250,7 +1250,7 @@
 		/* Convert table to block display */
 		:global(.cw-table table) {
 			display: block !important;
-			font-size: 0.8125rem !important;
+			font-size: 0.95rem !important;
 			width: 100% !important;
 		}
 
@@ -1372,7 +1372,7 @@
 	/* Tablet adjustments (641px - 1024px) */
 	@media (min-width: 641px) and (max-width: 1024px) {
 		:global(.cw-table table) {
-			font-size: 0.75rem;
+			font-size: 0.9rem;
 		}
 
 		:global(.cw-table th),
