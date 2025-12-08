@@ -78,7 +78,7 @@
 	const viewerPermissionLevel = $derived(
 		currentUserPermissionLevel ??
 			(currentUserId
-				? permissions.find((p) => p.user_id === currentUserId)?.permission_level ?? 4
+				? (permissions.find((p) => p.user_id === currentUserId)?.permission_level ?? 4)
 				: 4)
 	);
 
@@ -241,9 +241,9 @@
 		<div class="space-y-2">
 			{#each permissionUsers as user (user.user_id)}
 				<CWLocationPermissionItem
-					user={user}
+					{user}
 					{supabase}
-					currentUserId={currentUserId}
+					{currentUserId}
 					currentUserPermissionLevel={viewerPermissionLevel}
 					permissionLevels={permissionLevels.map((p) => ({
 						id: p.id as 1 | 2 | 3 | 4,
@@ -251,11 +251,11 @@
 						description:
 							p.id === 1
 								? 'Full control. Can add/remove devices and manage members.'
-							: p.id === 2
-								? 'Can edit names, alerts, and reports. Cannot move or delete devices.'
-							: p.id === 3
-								? 'View-only access.'
-							: 'No access.'
+								: p.id === 2
+									? 'Can edit names, alerts, and reports. Cannot move or delete devices.'
+									: p.id === 3
+										? 'View-only access.'
+										: 'No access.'
 					}))}
 					onPermissionChange={handlePermissionChange}
 					onRemove={canRemoveUsers ? openRemoveUserDialog : undefined}
@@ -279,8 +279,7 @@
 <CWDialog bind:open={showEditUserDialog} title="Edit User Permission">
 	<div class="space-y-4">
 		<p class="text-sm text-slate-400">
-			Update permission level for <strong class="text-slate-200">{selectedUser?.full_name}</strong
-			>.
+			Update permission level for <strong class="text-slate-200">{selectedUser?.full_name}</strong>.
 		</p>
 
 		<div>
@@ -311,7 +310,8 @@
 <CWDialog bind:open={showRemoveUserDialog} title="Remove User">
 	<div class="space-y-4">
 		<p class="text-slate-300">
-			Are you sure you want to remove <strong class="text-slate-100">{selectedUser?.full_name}</strong
+			Are you sure you want to remove <strong class="text-slate-100"
+				>{selectedUser?.full_name}</strong
 			> from this location?
 		</p>
 		<p class="text-sm text-slate-400">

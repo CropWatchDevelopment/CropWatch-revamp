@@ -150,40 +150,9 @@
                     location_id: locationId,
                     permission_level: newUserPermission,
                     is_active: true,
-                    applyToAllDevices: applyToAllDevices
+                    apply_to_devices: applyToAllDevices
                 })
             });
-
-			// if (locationError) {
-			// 	console.error('Error adding user to location:', locationError);
-			// 	return;
-			// }
-
-			// // If apply to all devices is checked, add user to all devices in the location
-			// if (applyToAllDevices) {
-			// 	// Get all devices in this location
-			// 	const { data: devices } = await supabase
-			// 		.from('cw_devices')
-			// 		.select('dev_eui')
-			// 		.eq('location_id', locationId);
-
-			// 	if (devices && devices.length > 0) {
-			// 		// Add user to each device
-			// 		const deviceOwnerInserts = devices.map((device) => ({
-			// 			dev_eui: device.dev_eui,
-			// 			user_id: selectedNewUser!.id,
-			// 			permission_level: newUserPermission
-			// 		}));
-
-			// 		const { error: deviceError } = await supabase
-			// 			.from('cw_device_owners')
-			// 			.insert(deviceOwnerInserts);
-
-			// 		if (deviceError) {
-			// 			console.error('Error adding user to devices:', deviceError);
-			// 		}
-			// 	}
-			// }
 
 			handleClose();
 			await onUserAdded?.();
