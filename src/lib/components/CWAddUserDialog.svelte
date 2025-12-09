@@ -3,6 +3,7 @@
 	import CWButton from './CWButton.svelte';
 	import CWDialog from './CWDialog.svelte';
 	import type { PermissionLevel } from './CWPermissionRowItem.svelte';
+	import { getToastContext } from '$lib/components/toast';
 
 	interface Props {
 		/** Whether the dialog is open */
@@ -49,6 +50,8 @@
 	let searchResults = $state<{ id: string; email: string; full_name: string }[]>([]);
 	let selectedNewUser = $state<{ id: string; email: string; full_name: string } | null>(null);
 	let searchError = $state('');
+
+	const toast = getToastContext();
 
 	// Device count for this location
 	let deviceCount = $state(0);
@@ -132,32 +135,36 @@
 		addingUser = true;
 
 		try {
-			// Add user to location_owners
-			// const { error: locationError } = await supabase.from('cw_location_owners').insert({
-			// 	location_id: locationId,
-			// 	user_id: selectedNewUser.id,
-			// 	permission_level: newUserPermission,
-			// 	is_active: true,
-			// 	admin_user_id: selectedNewUser.id // This might need to be the current user
-			// });
-            const insertedUser = fetch('/api/private/location/create-location-user', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    user_id: selectedNewUser.id,
-                    location_id: locationId,
-                    permission_level: newUserPermission,
-                    is_active: true,
-                    apply_to_devices: applyToAllDevices
-                })
-            });
+			const response = await fetch('/api/private/location/create-location-user', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					user_id: selectedNewUser.id,
+					location_id: locationId,
+					permission_level: newUserPermission,
+					is_active: true,
+					apply_to_devices: applyToAllDevices
+				})
+			});
+
+			const result = await response.json().catch(() => null);
+			if (!response.ok || result?.success === false) {
+				const message = result?.error ?? 'Failed to add user to location.';
+				throw new Error(message);
+			}
+
+			toast.success('User added to location.', { title: 'Success' });
 
 			handleClose();
 			await onUserAdded?.();
 		} catch (error) {
 			console.error('Error adding user:', error);
+			toast.error(
+				error instanceof Error ? error.message : 'Failed to add user to location.',
+				{ title: 'Unable to add user' }
+			);
 		} finally {
 			addingUser = false;
 		}

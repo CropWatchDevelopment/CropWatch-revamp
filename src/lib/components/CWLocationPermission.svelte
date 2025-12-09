@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { SupabaseClient } from '@supabase/supabase-js';
+	import { getToastContext } from '$lib/components/toast';
 	import CWPermissionRowItem, {
 		type PermissionUser,
 		type PermissionLevel
@@ -61,6 +62,8 @@
 		canRemove = true,
 		onPermissionsChange
 	}: Props = $props();
+
+	const toast = getToastContext();
 
 	// Dialog states
 	let showAddUserDialog = $state(false);
@@ -127,14 +130,17 @@
 
 			if (error) {
 				console.error('Error updating permission:', error);
+				toast.error('Failed to update permission.', { title: 'Update failed' });
 				return;
 			}
 
 			showEditUserDialog = false;
 			selectedUser = null;
+			toast.success('Permission updated.', { title: 'Permissions saved' });
 			await onPermissionsChange?.();
 		} catch (error) {
 			console.error('Error updating permission:', error);
+			toast.error('Failed to update permission.', { title: 'Update failed' });
 		} finally {
 			updatingUser = false;
 		}
@@ -154,14 +160,17 @@
 
 			if (error) {
 				console.error('Error removing user:', error);
+				toast.error('Failed to remove user.', { title: 'Remove failed' });
 				return;
 			}
 
 			showRemoveUserDialog = false;
 			selectedUser = null;
+			toast.success('User removed from location.', { title: 'User removed' });
 			await onPermissionsChange?.();
 		} catch (error) {
 			console.error('Error removing user:', error);
+			toast.error('Failed to remove user.', { title: 'Remove failed' });
 		} finally {
 			removingUser = false;
 		}
@@ -177,12 +186,15 @@
 
 			if (error) {
 				console.error('Error updating permission:', error);
+				toast.error('Failed to update permission.', { title: 'Update failed' });
 				return;
 			}
 
+			toast.success('Permission updated.', { title: 'Permissions saved' });
 			await onPermissionsChange?.();
 		} catch (error) {
 			console.error('Error updating permission:', error);
+			toast.error('Failed to update permission.', { title: 'Update failed' });
 		}
 	}
 </script>
