@@ -133,7 +133,7 @@
 			online: 0,
 			offline: 0,
 			loading: 0,
-			alert: 0,
+			alert: 0
 		};
 
 		for (const device of filteredDevices ?? []) {
@@ -147,7 +147,11 @@
 	const statusData = $derived<DonutSegment[]>([
 		{ label: 'Devices Online', value: statusCounts.online, color: '#10b981' },
 		{ label: 'Devices Offline', value: statusCounts.offline, color: '#ef4444' },
-		{ label: 'Active Alerts', value: filteredAlerts.filter((a) => a.is_triggered).length, color: '#f59e0b' },
+		{
+			label: 'Active Alerts',
+			value: filteredAlerts.filter((a) => a.is_triggered).length,
+			color: '#f59e0b'
+		},
 		{ label: 'Loading...', value: statusCounts.loading, color: '#64748b' }
 	]);
 
@@ -244,7 +248,9 @@
 					label: 'View',
 					onClick: (item: Device) => {
 						tableLoading = true;
-						goto(`/locations/location/${item.locationId}/devices/device/${item.id}?prev=${window.location.pathname}`);
+						goto(
+							`/locations/location/${item.locationId}/devices/device/${item.id}?prev=${window.location.pathname}`
+						);
 					}
 				}
 			]
@@ -337,14 +343,18 @@
 						<span class="font-mono">{activeAlerts}</span>
 						<span>with active alerts</span>
 					</span>
-					<span class="flex items-center gap-1 text-rose-300">
+					<span class="flex items-center gap-1 {offline == 0 ? 'text-green-300' : 'text-rose-300'}">
 						<span class="font-mono">{offline}</span>
 						<span>offline</span>
 					</span>
 				</div>
 				<div id="Dashboard__Overview__actions" class="w-full flex items-center gap-3">
 					<span class="hidden md:flex flex-1"></span>
-					<CWButton variant="secondary" class="left sm:right" onclick={() => window.location.reload()}>
+					<CWButton
+						variant="secondary"
+						class="left sm:right"
+						onclick={() => window.location.reload()}
+					>
 						<img src={REFRESH_ICON} alt="Refresh Icon" class="h-4 w-4" />
 						Refresh
 					</CWButton>
@@ -534,11 +544,28 @@
 							<div class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 shadow-sm">
 								<div class="flex items-center justify-between text-xs text-slate-400">
 									<span>Active Alert List</span>
-									<span class="text-slate-200">Reported Time</span>
+									{#if filteredAlerts.filter((d) => d.is_triggered).length > 0}
+										<span class="text-slate-200">Reported Time</span>
+									{/if}
 								</div>
 								<div class="mt-3 space-y-2 text-xs text-slate-200">
 									{#if filteredAlerts.filter((d) => d.is_triggered).length === 0}
-										<p class="text-slate-400">No active alerts.</p>
+										<!--Centered big green check-->
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="mx-auto mb-2 h-20 w-20 text-emerald-400"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+											stroke-width="2"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+											/>
+										</svg>
+										<p class="w-full text-center text-slate-400 text-2xl">No active alerts.</p>
 									{:else}
 										{#each filteredAlerts.filter((d) => d.is_triggered) as alert (alert.id)}
 											<div class="flex items-center justify-between">

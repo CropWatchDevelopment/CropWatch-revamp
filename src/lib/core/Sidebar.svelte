@@ -347,6 +347,7 @@
 
 		<!-- Stats Footer -->
 		<div class="mt-auto space-y-2 border-t border-slate-800 pt-3 text-xs text-slate-400">
+			<p>All Locations:</p>
 			<div class="flex items-center justify-between">
 				<span>Total in view</span>
 				<span class="font-mono text-slate-200">{total}</span>

@@ -3,6 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import CWButton from './CWButton.svelte';
 	import CWSelect from './CWSelect.svelte';
+	import CWDuration from './CWDuration.svelte';
 
 	type SortDir = 'asc' | 'desc';
 	type FilterFn<T> = (item: T, search: string) => boolean;
@@ -261,6 +262,18 @@
 			// Avoid breaking SSR if the resolver relies on browser-only globals.
 			return undefined;
 		}
+	};
+
+	const toDate = (value: unknown): Date | null => {
+		if (!value) return null;
+		if (value instanceof Date) {
+			return Number.isFinite(value.getTime()) ? value : null;
+		}
+		if (typeof value === 'string' || typeof value === 'number') {
+			const parsed = new Date(value);
+			return Number.isFinite(parsed.getTime()) ? parsed : null;
+		}
+		return null;
 	};
 
 	const applyColumnFilters = (list: unknown[]) => {
@@ -810,50 +823,27 @@
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-sm text-slate-400">
-																{raw ? new Date(raw as string).toLocaleString() : ''}
-															</span>
+															{@const dt = toDate(raw)}
+															<div class="flex flex-col">
+																<span class="font-mono text-sm text-slate-400">
+																	{#if dt}
+																		<CWDuration date={dt} />
+																	{:else}
+																		—
+																	{/if}
+																</span>
+																{#if dt}
+																	<span class="font-mono text-xs text-slate-500">
+																		{dt.toLocaleString()}
+																	</span>
+																{/if}
+															</div>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}
 																<span class="font-mono text-base text-slate-50 font-medium">
 																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
 																</span>
-															{:else if col.type === 'buttons' && col.buttons?.length}
-																<div class="flex flex-wrap items-center justify-end gap-2">
-																	{#each col.buttons as btn, bIdx (bIdx)}
-																		<button
-																			class={`${buttonClasses(btn.variant)} ${btn.class ?? ''}`}
-																			type="button"
-																			onclick={() => btn.onClick?.(item)}
-																		>
-																			{btn.label}
-																		</button>
-																	{/each}
-																</div>
-															{:else if col.type === 'select' && col.select}
-																{@const selectConfig = col.select}
-																{@const selectOptions = typeof selectConfig.options === 'function' ? selectConfig.options(item) : selectConfig.options}
-																{@const isSelectDisabled = typeof selectConfig.disabled === 'function' ? selectConfig.disabled(item) : (selectConfig.disabled ?? false)}
-																<CWSelect
-																	options={selectOptions}
-																	value={raw as string | number | null}
-																	placeholder={selectConfig.placeholder ?? 'Select...'}
-																	size={selectConfig.size ?? 'sm'}
-																	disabled={isSelectDisabled}
-																	onchange={(e) => {
-																		const target = e.currentTarget as HTMLSelectElement;
-																		const newValue =
-																			target.value === ''
-																				? null
-																				: isNaN(Number(target.value))
-																					? target.value
-																					: Number(target.value);
-																		selectConfig.onChange?.(item, newValue);
-																	}}
-																/>
-															{:else if col.type === 'custom' && cell}
-																{@render cell({ item, col, value: raw })}
 															{:else}
 																<span class="text-slate-50">
 																	{raw}{col.suffix ?? ''}
@@ -891,9 +881,21 @@
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-sm text-slate-300 md:text-base">
-																{raw ? new Date(raw as string).toLocaleString() : ''}
-															</span>
+															{@const dt = toDate(raw)}
+															<div class="flex flex-col">
+																<span class="font-mono text-sm text-slate-300 md:text-base">
+																	{#if dt}
+																		<CWDuration date={dt} />
+																	{:else}
+																		—
+																	{/if}
+																</span>
+																{#if dt}
+																	<span class="font-mono text-xs text-slate-500">
+																		{dt.toLocaleString()}
+																	</span>
+																{/if}
+															</div>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}
@@ -1012,50 +1014,27 @@
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-sm text-slate-400">
-																{raw ? new Date(raw as string).toLocaleString() : ''}
-															</span>
+															{@const dt = toDate(raw)}
+															<div class="flex flex-col">
+																<span class="font-mono text-sm text-slate-400">
+																	{#if dt}
+																		<CWDuration date={dt} />
+																	{:else}
+																		—
+																	{/if}
+																</span>
+																{#if dt}
+																	<span class="font-mono text-xs text-slate-500">
+																		{dt.toLocaleString()}
+																	</span>
+																{/if}
+															</div>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}
 																<span class="font-mono text-base text-slate-50 font-medium">
 																	{Number(raw).toLocaleString()}{col.suffix ?? ''}
 																</span>
-															{:else if col.type === 'buttons' && col.buttons?.length}
-																<div class="flex flex-wrap items-center gap-2">
-																	{#each col.buttons as btn, bIdx (bIdx)}
-																		<CWButton
-																			class={`${btn.class ?? ''}`}
-																			variant={btn.variant}
-																			onclick={() => btn.onClick?.(item)}
-																		>
-																			{btn.label}
-																		</CWButton>
-																	{/each}
-																</div>
-															{:else if col.type === 'select' && col.select}
-																{@const selectConfig = col.select}
-																{@const selectOptions = typeof selectConfig.options === 'function' ? selectConfig.options(item) : selectConfig.options}
-																{@const isSelectDisabled = typeof selectConfig.disabled === 'function' ? selectConfig.disabled(item) : (selectConfig.disabled ?? false)}
-																<CWSelect
-																	options={selectOptions}
-																	value={raw as string | number | null}
-																	placeholder={selectConfig.placeholder ?? 'Select...'}
-																	size={selectConfig.size ?? 'sm'}
-																	disabled={isSelectDisabled}
-																	onchange={(e) => {
-																		const target = e.currentTarget as HTMLSelectElement;
-																		const newValue =
-																			target.value === ''
-																				? null
-																				: isNaN(Number(target.value))
-																					? target.value
-																					: Number(target.value);
-																		selectConfig.onChange?.(item, newValue);
-																	}}
-																/>
-															{:else if col.type === 'custom' && cell}
-																{@render cell({ item, col, value: raw })}
 															{:else}
 																<span class="text-slate-50">
 																	{raw}{col.suffix ?? ''}
@@ -1093,9 +1072,21 @@
 															</div>
 														{:else if col.type === 'datetime'}
 															{@const raw = getColumnValue(item, col)}
-															<span class="font-mono text-sm text-slate-300 md:text-base">
-																{raw ? new Date(raw as string).toLocaleString() : ''}
-															</span>
+															{@const dt = toDate(raw)}
+															<div class="flex flex-col">
+																<span class="font-mono text-sm text-slate-300 md:text-base">
+																	{#if dt}
+																		<CWDuration date={dt} />
+																	{:else}
+																		—
+																	{/if}
+																</span>
+																{#if dt}
+																	<span class="font-mono text-xs text-slate-500">
+																		{dt.toLocaleString()}
+																	</span>
+																{/if}
+															</div>
 														{:else}
 															{@const raw = getColumnValue(item, col)}
 															{#if col.type === 'number'}

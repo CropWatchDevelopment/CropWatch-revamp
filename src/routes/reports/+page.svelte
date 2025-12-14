@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+import { resolve } from '$app/paths';
 	import CWButton from '$lib/components/CWButton.svelte';
 	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWTable from '$lib/components/CWTable.svelte';
 	import type { PageData } from './$types';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
 
@@ -37,19 +38,21 @@
 
 	const currentPath = $derived($page.url.pathname);
 
-	const reportItems = $derived(
-		data.reports.map((report) => ({
-			...report,
-			device_label: report.device_name ? `${report.device_name} (${report.dev_eui})` : report.dev_eui,
-			created_at_fmt: new Date(report.created_at).toLocaleString()
-		}))
-	);
+const reportItems = $derived(
+	data.reports.map((report) => ({
+		...report,
+		device_label: report.device_name ? `${report.device_name} (${report.dev_eui})` : report.dev_eui,
+		created_at_fmt: new Date(report.created_at).toLocaleString()
+	}))
+);
 
-	const reportColumns = [
-		{
-			key: 'select',
-			label: '',
-			width: '40px',
+const createReportUrl = $derived(resolve('/reports/create-report'));
+
+const reportColumns = [
+	{
+		key: 'select',
+		label: '',
+		width: '40px',
 			align: 'center'
 		},
 		{
@@ -58,7 +61,7 @@
 			type: 'stacked',
 			secondaryKey: 'report_id',
 			sortable: true,
-			href: (item: ReportItem) => resolve(`/reports/${item.report_id}/edit`)
+			href: (item: ReportItem) => resolve(`/reports/${item.report_id}/edit-report`)
 		},
 		{
 			key: 'device_label',
@@ -93,7 +96,7 @@
 					label: 'Edit',
 					variant: 'ghost',
 					onClick: (row: unknown) => {
-						const url = resolve(`/reports/${(row as ReportItem).report_id}/edit`);
+						const url = resolve(`/reports/${(row as ReportItem).report_id}/edit-report`);
 						if (typeof window !== 'undefined') window.location.href = url;
 					}
 				}
@@ -102,7 +105,7 @@
 	];
 
 	const openReport = (item: ReportItem) => {
-		const url = resolve(`/reports/${item.report_id}/edit`);
+		const url = resolve(`/reports/${item.report_id}/edit-report`);
 		if (typeof window !== 'undefined') window.location.href = url;
 	};
 	const openDevice = (item: ReportItem) => {
@@ -125,8 +128,11 @@
 				Browse and download your reports. Use the checkboxes to bulk download.
 			</p>
 		</div>
-		<div class="flex items-center gap-2">
-			<CWButton variant="primary" onclick={bulkDownload} disabled={selected.length === 0}>
+		<div class="flex flex-wrap items-center gap-2">
+			<CWButton variant="primary" onclick={() => (window.location.href = createReportUrl)}>
+				Create report
+			</CWButton>
+			<CWButton variant="secondary" onclick={bulkDownload} disabled={selected.length === 0}>
 				Bulk download ({selected.length})
 			</CWButton>
 			<CWButton variant="ghost" onclick={selectAll}>Select all</CWButton>
@@ -182,7 +188,7 @@
 								<CWButton
 									variant="ghost"
 									size="sm"
-									onclick={() => goto(resolve(`/reports/${item.report_id}/edit`))}
+									onclick={() => goto(resolve(`/reports/${item.report_id}/edit-report`))}
 								>
 									Edit
 								</CWButton>

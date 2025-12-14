@@ -6,8 +6,8 @@
 	import FORGOT_SHIELD_ICON from '$lib/images/icons/forgot_shield.svg';
 	import { getToastContext } from '$lib/components/toast';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { onMount } from 'svelte';
-	import { loadRecaptchaScript, executeRecaptcha } from '$lib/utils/recaptcha';
+	import { onDestroy, onMount } from 'svelte';
+	import { loadRecaptchaScript, executeRecaptcha, unloadRecaptchaScript } from '$lib/utils/recaptcha';
 	import { enhance } from '$app/forms';
 
 	let { form } = $props<{
@@ -15,13 +15,24 @@
 	}>();
 
 	let loggingIn: boolean = $state<boolean>(false);
+	let loadingCaptcha: boolean = $state<boolean>(true);
 	let recaptchaTokenInput: HTMLInputElement;
 
 	const toast = getToastContext();
 
-	onMount(() => {
+	onMount(async () => {
 		// Preload reCAPTCHA script
-		loadRecaptchaScript();
+		const recaptchaLoaded = await loadRecaptchaScript({
+			setLoadingCaptcha: (loading) => {
+				loadingCaptcha = loading;
+			}
+		});
+		console.log('reCAPTCHA loaded:', recaptchaLoaded);
+	});
+
+	onDestroy(() => {
+		// Cleanup if necessary
+		unloadRecaptchaScript();
 	});
 </script>
 
@@ -104,7 +115,9 @@
 		</div>
 
 		<h1 class="text-center text-lg font-semibold text-slate-50">Welcome to CropWatch!</h1>
-		<p class="mt-1 text-center text-sm text-slate-400">Sign-in to your account for your latest updates</p>
+		<p class="mt-1 text-center text-sm text-slate-400">
+			Sign-in to your account for your latest updates
+		</p>
 
 		{#if form?.message}
 			<p
@@ -120,7 +133,7 @@
 			class="mt-6 space-y-4"
 			use:enhance={async ({ formData, cancel }) => {
 				loggingIn = true;
-				
+
 				try {
 					// Get reCAPTCHA token before submitting
 					const token = await executeRecaptcha('LOGIN');
@@ -133,20 +146,20 @@
 					return;
 				}
 
-					return async ({ result }) => {
-						if (result.type === 'redirect') {
-							// Invalidate all data to reload app state with authenticated session
-							await invalidateAll();
-							goto(result.location);
-						} else if (result.type === 'failure') {
-							const message = (result.data as { message?: string })?.message || 'Login failed';
-							toast.error(message);
-							loggingIn = false;
-						} else if (result.type === 'error') {
-							toast.error('An error occurred. Please try again.');
-							loggingIn = false;
-						}
-					};
+				return async ({ result }) => {
+					if (result.type === 'redirect') {
+						// Invalidate all data to reload app state with authenticated session
+						await invalidateAll();
+						goto(result.location);
+					} else if (result.type === 'failure') {
+						const message = (result.data as { message?: string })?.message || 'Login failed';
+						toast.error(message);
+						loggingIn = false;
+					} else if (result.type === 'error') {
+						toast.error('An error occurred. Please try again.');
+						loggingIn = false;
+					}
+				};
 			}}
 		>
 			<label class="block text-sm text-slate-300">
@@ -173,18 +186,37 @@
 				/>
 			</label>
 
-			<CWButton type="submit" variant="primary" loading={loggingIn} size="md" fullWidth={true}>
+			<CWButton
+				type="submit"
+				variant="primary"
+				loading={loggingIn || loadingCaptcha}
+				disabled={loggingIn || loadingCaptcha}
+				size="md"
+				fullWidth={true}
+			>
 				<img src={KEY_ICON} alt="Sign in icon" class="h-5 w-5" />
-				Sign in
+				{loadingCaptcha ? 'Loading Site Security...' : 'Sign in'}
 			</CWButton>
 
 			<div class="flex flex-row gap-4">
-				<CWButton type="button" variant="secondary" size="md" fullWidth={true} onclick={() => goto('/auth/register')}>
+				<CWButton
+					type="button"
+					variant="secondary"
+					size="md"
+					fullWidth={true}
+					onclick={() => goto('/auth/register')}
+				>
 					<img src={ADD_PERSON_ICON} alt="Sign in icon" class="h-5 w-5" />
 					Create Account
 				</CWButton>
 
-				<CWButton type="button" variant="secondary" size="md" fullWidth={true} onclick={() => goto('/auth/forgot-password')}>
+				<CWButton
+					type="button"
+					variant="secondary"
+					size="md"
+					fullWidth={true}
+					onclick={() => goto('/auth/forgot-password')}
+				>
 					<img src={FORGOT_SHIELD_ICON} alt="Sign in icon" class="h-5 w-5" />
 					Forgot Password
 				</CWButton>
