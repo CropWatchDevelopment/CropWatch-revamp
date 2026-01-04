@@ -1323,6 +1323,41 @@ export type Database = {
           },
         ]
       }
+      cw_power_data: {
+        Row: {
+          created_at: string
+          current: number | null
+          dev_eui: string
+          id: number
+          voltage: number | null
+          watts: number | null
+        }
+        Insert: {
+          created_at?: string
+          current?: number | null
+          dev_eui: string
+          id?: number
+          voltage?: number | null
+          watts?: number | null
+        }
+        Update: {
+          created_at?: string
+          current?: number | null
+          dev_eui?: string
+          id?: number
+          voltage?: number | null
+          watts?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cw_power_data_dev_eui_fkey"
+            columns: ["dev_eui"]
+            isOneToOne: false
+            referencedRelation: "cw_devices"
+            referencedColumns: ["dev_eui"]
+          },
+        ]
+      }
       cw_watermeter_uplinks: {
         Row: {
           battery_level: number | null

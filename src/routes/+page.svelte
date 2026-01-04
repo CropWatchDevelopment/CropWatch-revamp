@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
+	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import CWTable from '$lib/components/CWTable.svelte';
+	import CWTable, { type ColumnConfig } from '$lib/components/CWTable.svelte';
 	import type { DeviceStatus } from '$lib/types/DeviceStatus.type';
 	import type { Facility } from '$lib/Interfaces/facility.interface';
 	import type { Location } from '$lib/Interfaces/location.interface';
@@ -9,7 +10,7 @@
 
 	import { useAppState } from '$lib/data/AppState.svelte';
 	import { onMount, onDestroy } from 'svelte';
-	import { startDeviceRealtime } from '$lib/data/SourceOfTruth.svelte';
+	import { fetchDataTableRows, startDeviceRealtime, type DataTabKey } from '$lib/data/SourceOfTruth.svelte';
 
 	import NOTIFICATIONS_ICON from '$lib/images/icons/notifications.svg';
 	import CWButton from '$lib/components/CWButton.svelte';
@@ -19,7 +20,13 @@
 	import CWDonutChart, { type DonutSegment } from '$lib/components/CWDonutChart.svelte';
 	import type { Alert } from '$lib/Interfaces/alert.interface';
 	import ACTIVE_ALERT_ICON from '$lib/images/icons/active_alert.svg';
+	import DeviceRowItem, { type DeviceMetric } from '$lib/components/DeviceRowItem.svelte';
 	import REFRESH_ICON from '$lib/images/icons/refresh.svg';
+	import CWTabGroup, { type TabItem } from '$lib/components/CWTabGroup.svelte';
+	import CLOUD_ICON from '$lib/images/icons/cloud.svg';
+	import PLANT_ICON from '$lib/images/icons/plant.svg';
+	import WATER_ICON from '$lib/images/icons/water.svg';
+	import POWER_ICON from '$lib/images/icons/power.svg';
 
 	const getAppState = useAppState();
 	let appState = $derived(getAppState());
@@ -78,17 +85,6 @@
 	const getFacility = (id: string) => appState.facilities.find((f: Facility) => f.id === id);
 	const getLocation = (id: string) => appState.locations.find((l: Location) => l.id === id);
 	const STATUS_TYPES: DeviceStatus[] = ['online', 'offline', 'loading', 'alert'];
-
-	const deviceMatchesSearch = (d: Device, q: string) => {
-		if (!q?.trim()) return true;
-		const facility = getFacility(d.facilityId);
-		const location = getLocation(d.locationId);
-		const haystack = [d.id, d.name, facility?.name, facility?.code, location?.name]
-			.filter(Boolean)
-			.join(' ')
-			.toLowerCase();
-		return haystack.includes(q.toLowerCase());
-	};
 
 	const filteredAlerts = $derived.by(() => {
 		let list = appState.alerts;
@@ -198,6 +194,16 @@
 		return { min, max, avg };
 	});
 
+	type DataRow = Record<string, unknown>;
+	type AirRow = Device & { facilityName: string; locationName: string };
+
+	const dataTabs: TabItem[] = [
+		{ id: 'air', label: 'Air', icon: CLOUD_ICON },
+		{ id: 'soil', label: 'Soil', icon: PLANT_ICON },
+		{ id: 'water', label: 'Water', icon: WATER_ICON },
+		{ id: 'power', label: 'Power', icon: POWER_ICON }
+	];
+
 	const statusOptions = STATUS_TYPES?.map((s) => ({
 		value: s,
 		label: statusConfig[s].label
@@ -211,53 +217,82 @@
 		return acc;
 	}, {});
 
-	const tableColumns = [
-		{ key: 'name', label: 'Device', type: 'stacked', secondaryKey: 'id', sortable: true },
-		{ key: 'temperatureC', label: 'Temp', type: 'number', suffix: ' °C', sortable: true },
-		{ key: 'humidity', label: 'Humidity', type: 'number', suffix: ' %RH', sortable: true },
-		{ key: 'co2', label: 'CO₂', type: 'number', suffix: ' ppm', sortable: true },
-		{
-			key: 'status',
-			label: 'Status',
-			type: 'badge',
-			sortable: true,
-			sortOrder: ['alert', 'offline', 'online', 'loading'],
-			filter: {
-				type: 'checkbox',
-				options: statusOptions
+	const tabColumnsByKey: Record<DataTabKey, ColumnConfig[]> = {
+		air: [
+			{ key: 'name', label: 'Device', type: 'stacked', secondaryKey: 'id', sortable: true },
+			{ key: 'temperatureC', label: 'Temp', type: 'number', suffix: ' °C', sortable: true },
+			{ key: 'humidity', label: 'Humidity', type: 'number', suffix: ' %RH', sortable: true },
+			{ key: 'co2', label: 'CO₂', type: 'number', suffix: ' ppm', sortable: true },
+			{
+				key: 'status',
+				label: 'Status',
+				type: 'badge',
+				sortable: true,
+				sortOrder: ['alert', 'offline', 'online', 'loading'],
+				filter: {
+					type: 'checkbox',
+					options: statusOptions
+				},
+				badges: statusBadges
 			},
-			badges: statusBadges
-		},
-		{ key: 'lastSeen', label: 'Last seen', type: 'datetime', sortable: true },
-		{
-			key: 'facilityName',
-			label: 'Facility / Location',
-			type: 'stacked',
-			secondaryKey: 'locationName',
-			sortable: true,
-			href: (item: Device) =>
-				`/locations/location/${item.locationId}?prev=${window.location.pathname}`
-		},
-		{
-			key: 'Actions',
-			label: 'Actions',
-			type: 'buttons',
-			cellClass: 'items-center justify-center',
-			buttons: [
-				{
-					label: 'View',
-					onClick: (item: Device) => {
-						tableLoading = true;
-						goto(
-							`/locations/location/${item.locationId}/devices/device/${item.id}?prev=${window.location.pathname}`
-						);
+			{ key: 'lastSeen', label: 'Last seen', type: 'datetime', sortable: true },
+			{
+				key: 'facilityName',
+				label: 'Facility / Location',
+				type: 'stacked',
+				secondaryKey: 'locationName',
+				sortable: true,
+				href: (item: Device) =>
+					`/locations/location/${item.locationId}?prev=${$page.url.pathname}`
+			},
+			{
+				key: 'Actions',
+				label: 'Actions',
+				type: 'buttons',
+				cellClass: 'items-center justify-center',
+				buttons: [
+					{
+						label: 'View',
+						onClick: (item: Device) => {
+							tableLoading = true;
+							goto(
+								`/locations/location/${item.locationId}/devices/device/${item.id}?prev=${$page.url.pathname}`
+							);
+						}
 					}
-				}
-			]
-		}
-	];
+				]
+			}
+		],
+		soil: [
+			{ key: 'dev_eui', label: 'Device ID', sortable: true },
+			{ key: 'created_at', label: 'Timestamp', type: 'datetime', sortable: true },
+			{ key: 'temperature_c', label: 'Temp', type: 'number', suffix: ' °C', sortable: true },
+			{ key: 'moisture', label: 'Moisture', type: 'number', sortable: true },
+			{ key: 'ec', label: 'EC', type: 'number', suffix: ' uS/cm', sortable: true },
+			{ key: 'ph', label: 'pH', type: 'number', sortable: true }
+		],
+		water: [
+			{ key: 'dev_eui', label: 'Device ID', sortable: true },
+			{ key: 'created_at', label: 'Timestamp', type: 'datetime', sortable: true },
+			{ key: 'deapth_cm', label: 'Depth', type: 'number', suffix: ' cm', sortable: true },
+			{ key: 'temperature_c', label: 'Temp', type: 'number', suffix: ' °C', sortable: true },
+			{ key: 'pressure', label: 'Pressure', type: 'number', sortable: true },
+			{ key: 'spo2', label: 'SpO2', type: 'number', sortable: true }
+		],
+		power: [
+			{ key: 'dev_eui', label: 'Device ID', sortable: true },
+			{ key: 'created_at', label: 'Timestamp', type: 'datetime', sortable: true },
+			{ key: 'voltage', label: 'Voltage', type: 'number', suffix: ' V', sortable: true },
+			{ key: 'current', label: 'Current', type: 'number', suffix: ' A', sortable: true },
+			{ key: 'watts', label: 'Watts', type: 'number', suffix: ' W', sortable: true }
+		]
+	};
 
-	const tableRows = $derived(
+	let activeTab = $state<DataTabKey>('air');
+	let tableRowsByTab = $state<Partial<Record<DataTabKey, DataRow[]>>>({});
+
+	const tableColumns = $derived(tabColumnsByKey[activeTab] ?? []);
+	const airRows = $derived<AirRow[]>(
 		filteredDevices?.map((d: Device) => {
 			const facility = getFacility(d.facilityId);
 			const location = getLocation(d.locationId);
@@ -268,16 +303,170 @@
 			};
 		})
 	);
+	const tableRows = $derived(activeTab === 'air' ? airRows : tableRowsByTab[activeTab] ?? []);
+
+	type MobileRowItem = {
+		name: string;
+		status?: DeviceStatus;
+		primary?: DeviceMetric | null;
+		secondary?: DeviceMetric | null;
+		details?: DeviceMetric[];
+		lastSeen?: Date | null;
+		detailHref?: string;
+	};
+
+	const isValueValid = (value: unknown) =>
+		value !== null && value !== undefined && !(typeof value === 'number' && Number.isNaN(value));
+
+	const formatMetric = (label: string, value: unknown, unit?: string): DeviceMetric => ({
+		label,
+		value,
+		unit: unit?.trim() || undefined
+	});
+
+	const getRowKey = (row: DataRow, index: number) => {
+		const record = row as Record<string, unknown>;
+		return String(record.id ?? record.dev_eui ?? index);
+	};
+
+	const buildAirRowItem = (device: AirRow): MobileRowItem => {
+		const facility = getFacility(device.facilityId);
+		const location = getLocation(device.locationId);
+		const details: DeviceMetric[] = [];
+
+		if (isValueValid(device.co2)) {
+			details.push(formatMetric('CO₂', device.co2, 'ppm'));
+		}
+		if (facility?.name) {
+			details.push(formatMetric('Facility', facility.name));
+		}
+		if (location?.name) {
+			details.push(formatMetric('Location', location.name));
+		}
+
+		return {
+			name: device.name ?? device.id,
+			status: device.status,
+			primary: isValueValid(device.temperatureC)
+				? formatMetric('Temp', device.temperatureC, '°C')
+				: null,
+			secondary: isValueValid(device.humidity)
+				? formatMetric('Humidity', device.humidity, '%RH')
+				: null,
+			details,
+			lastSeen: device.lastSeen ? new Date(device.lastSeen) : null,
+			detailHref: `/locations/location/${device.locationId}/devices/device/${device.id}?prev=${$page.url.pathname}`
+		};
+	};
+
+	const buildNonAirRowItem = (row: DataRow): MobileRowItem => {
+		const record = row as Record<string, unknown>;
+		const devEui = String(record.dev_eui ?? '');
+		const device = devEui ? appState.devices.find((d: Device) => d.id === devEui) : null;
+		const numericCols = tableColumns.filter((col) => col.type === 'number');
+		const metrics = numericCols
+			.map((col) => ({
+				col,
+				value: record[col.key]
+			}))
+			.filter(({ value }) => isValueValid(value))
+			.map(({ col, value }) => formatMetric(col.label, value, col.suffix));
+
+		const createdAt = record.created_at;
+		const lastSeen = isValueValid(createdAt)
+			? createdAt instanceof Date
+				? createdAt
+				: new Date(String(createdAt))
+			: null;
+
+		return {
+			name: (device?.name ?? devEui) || 'Device',
+			status: device?.status,
+			primary: metrics[0] ?? null,
+			secondary: metrics[1] ?? null,
+			details: metrics.slice(2),
+			lastSeen,
+			detailHref: device
+				? `/locations/location/${device.locationId}/devices/device/${device.id}?prev=${$page.url.pathname}`
+				: ''
+		};
+	};
+
+	const buildMobileRowItem = (row: DataRow): MobileRowItem =>
+		activeTab === 'air' ? buildAirRowItem(row as AirRow) : buildNonAirRowItem(row);
+
+	const tableMatchesSearch = (row: DataRow, q: string) => {
+		if (activeTab === 'air') {
+			const device = row as AirRow;
+			if (!q?.trim()) return true;
+			const facility = getFacility(device.facilityId);
+			const location = getLocation(device.locationId);
+			const haystack = [device.id, device.name, facility?.name, facility?.code, location?.name]
+				.filter(Boolean)
+				.join(' ')
+				.toLowerCase();
+			return haystack.includes(q.toLowerCase());
+		}
+		if (!q?.trim()) return true;
+		const lowered = q.toLowerCase();
+		return Object.values(row ?? {}).some((value) =>
+			String(value ?? '').toLowerCase().includes(lowered)
+		);
+	};
+
+	const getSessionTokens = () => {
+		const session = $page.data.session;
+		return session
+			? {
+					access_token: session.access_token,
+					refresh_token: session.refresh_token ?? null
+				}
+			: undefined;
+	};
+
+	let loadToken = 0;
+
+	const loadTabRows = async (tab: DataTabKey) => {
+		if (tab === 'air') return;
+		if (tableRowsByTab[tab] != null) return;
+		const token = ++loadToken;
+		tableLoading = true;
+		try {
+			const rows = await fetchDataTableRows({ tab, limit: 200, session: getSessionTokens() });
+			if (token !== loadToken) return;
+			tableRowsByTab = { ...tableRowsByTab, [tab]: rows as DataRow[] };
+		} catch (err) {
+			console.error('Failed to load table data', err);
+			if (token !== loadToken) return;
+			tableRowsByTab = { ...tableRowsByTab, [tab]: [] };
+		} finally {
+			if (token === loadToken) tableLoading = false;
+		}
+	};
+
+	const handleTabChange = (tab: TabItem) => {
+		if (typeof tab.id !== 'string') return;
+		void loadTabRows(tab.id as DataTabKey);
+	};
 
 	let stopRealtime: (() => void) | null = null;
 
 	onMount(async () => {
-		stopRealtime = await startDeviceRealtime(appState);
+		void loadTabRows(activeTab);
+		const session = $page.data.session;
+		const tokens = session
+			? {
+					access_token: session.access_token,
+					refresh_token: session.refresh_token ?? null
+				}
+			: undefined;
+		stopRealtime = await startDeviceRealtime(appState, tokens);
 	});
 
 	onDestroy(() => {
 		if (stopRealtime) stopRealtime();
 	});
+
 </script>
 
 <svelte:head>
@@ -289,8 +478,8 @@
 	<main class="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-950">
 		<!-- Top toolbar -->
 		<header class="flex-none border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-			<div class="flex items-center justify-between px-6 py-3">
-				<div class="flex flex-col gap-1">
+			<div class="flex items-center justify-between px-6 py-0 md:py-3">
+				<div class="hidden md:flex flex-col gap-1">
 					<div class="flex items-center gap-2 text-xs text-slate-400">
 						<span>Group</span>
 						<span class="text-slate-600">/</span>
@@ -371,29 +560,69 @@
 			</div>
 		</header>
 
-		<!-- Device table -->
-		<section class="flex-1 min-h-0 overflow-hidden">
-			<div class="flex h-full min-h-0 flex-col overflow-hidden px-6 pb-6 pt-2">
-				<!-- Device Table -->
-				<div
-					class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900 mb-2"
-				>
-					<svelte:boundary>
-						<CWTable
-							items={tableRows}
-							columns={tableColumns}
-							filterFn={(item, q) => deviceMatchesSearch(item as Device, q)}
-							storageKey="cwtable_header_filters"
-							pageSize={12}
-							rowHeight={64}
-							loading={tableLoading}
-							class="h-full flex-1 text-sm"
-							virtual={tableRows?.length > 30}
-						/>
 
-						{#snippet failed(error, reset)}
-							<div class="flex flex-col items-center justify-center py-12 text-center">
-								<div
+		<div class="flex flex-wrap items-center gap-3 px-6 py-3">
+			<CWTabGroup
+				tabs={dataTabs}
+				bind:value={activeTab}
+				onChange={handleTabChange}
+				class="w-full md:w-auto"
+			/>
+			</div>
+
+			<section class="flex-1 min-h-0 overflow-hidden">
+				<div class="flex h-full min-h-0 flex-col overflow-hidden px-6 pb-6 pt-2">
+					<div
+						class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900 mb-2"
+					>
+						<svelte:boundary>
+							<div class="flex h-full min-h-0 flex-col">
+								<div class="hidden h-full min-h-0 flex-col md:flex">
+									<CWTable
+										items={tableRows}
+										columns={tableColumns}
+										filterFn={(item, q) => tableMatchesSearch(item as DataRow, q)}
+										storageKey="cwtable_header_filters"
+										pageSize={12}
+										rowHeight={64}
+										loading={tableLoading}
+										class="h-full flex-1 text-sm"
+										virtual={tableRows?.length > 30}
+									/>
+								</div>
+
+							<div class="flex flex-col gap-3 md:hidden">
+								{#if tableLoading}
+									<div
+										class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300"
+									>
+										Loading devices...
+									</div>
+								{:else if tableRows?.length}
+									{#each tableRows as row, index (getRowKey(row, index))}
+										{@const item = buildMobileRowItem(row)}
+										<DeviceRowItem
+											name={item.name}
+											status={item.status}
+											primary={item.primary ?? null}
+											secondary={item.secondary ?? null}
+											details={item.details ?? []}
+											lastSeen={item.lastSeen ?? null}
+											detailHref={item.detailHref ?? ''}
+										/>
+									{/each}
+								{:else}
+									<div
+										class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-400"
+									>
+										No devices found.
+									</div>
+								{/if}
+							</div>
+
+							{#snippet failed(error, reset)}
+								<div class="flex flex-col items-center justify-center py-12 text-center">
+									<div
 									class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30"
 								>
 									<svg

@@ -14,6 +14,10 @@ type DeviceRow = Database['public']['Tables']['cw_devices']['Row'];
 type LocationRow = Database['public']['Tables']['cw_locations']['Row'];
 type DeviceTypeRow = Database['public']['Tables']['cw_device_type']['Row'];
 type CwRuleRow = Database['public']['Tables']['cw_rules']['Row'];
+type CwAirRow = Database['public']['Tables']['cw_air_data']['Row'];
+type CwSoilRow = Database['public']['Tables']['cw_soil_data']['Row'];
+type CwWaterRow = Database['public']['Tables']['cw_water_data']['Row'];
+type CwPowerRow = Database['public']['Tables']['cw_power_data']['Row'];
 
 type DeviceJoined = DeviceRow & {
 	location?: LocationRow | null;
@@ -21,11 +25,20 @@ type DeviceJoined = DeviceRow & {
 	alerts?: CwRuleRow[] | null;
 };
 
-type AuthSession = { access_token: string; refresh_token: string };
+type AuthSession = { access_token: string; refresh_token?: string | null };
+export type DataTabKey = 'air' | 'soil' | 'water' | 'power';
+export type DataTableRow = CwAirRow | CwSoilRow | CwWaterRow | CwPowerRow;
+
+const DATA_TABLE_MAP = {
+	air: 'cw_air_data',
+	soil: 'cw_soil_data',
+	water: 'cw_water_data',
+	power: 'cw_power_data'
+} as const;
 
 // Singleton client instance to avoid multiple GoTrueClient instances
 let supabaseClientInstance: SupabaseClient<Database> | null = null;
-let currentSessionTokens: { access_token: string; refresh_token: string } | null = null;
+let currentSessionTokens: { access_token: string; refresh_token?: string | null } | null = null;
 
 async function createSupabaseClient(session?: AuthSession): Promise<SupabaseClient<Database>> {
 	if (!PUBLIC_SUPABASE_URL || !PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) {
@@ -33,10 +46,13 @@ async function createSupabaseClient(session?: AuthSession): Promise<SupabaseClie
 	}
 
 	// Check if we can reuse the existing client
-	const sessionChanged = session && currentSessionTokens && (
-		session.access_token !== currentSessionTokens.access_token ||
-		session.refresh_token !== currentSessionTokens.refresh_token
-	);
+	const sessionChanged =
+		session != null &&
+		currentSessionTokens != null &&
+		(
+			session.access_token !== currentSessionTokens.access_token ||
+			(session.refresh_token ?? null) !== (currentSessionTokens.refresh_token ?? null)
+		);
 
 	// Reuse existing client if no session change
 	if (supabaseClientInstance && !sessionChanged && (!session || currentSessionTokens)) {
@@ -64,6 +80,8 @@ async function createSupabaseClient(session?: AuthSession): Promise<SupabaseClie
 			refresh_token: session.refresh_token
 		});
 		currentSessionTokens = { ...session };
+	} else if (session?.access_token) {
+		currentSessionTokens = { access_token: session.access_token, refresh_token: session.refresh_token ?? null };
 	}
 
 	return supabaseClientInstance;
@@ -225,48 +243,34 @@ async function fetchLocation(
 	return data ?? null;
 }
 
-/**
- * Subscribe to realtime inserts/updates on cw_devices and merge into appState.devices.
- * Returns an unsubscribe function.
- */
-export async function startDeviceRealtime(appState: AppStateState, session?: AuthSession) {
-	const supabase = await createSupabaseClient(session);
-	const typeCache = new Map<number, DeviceTypeRow>();
-	const locationCache = new Map<number, LocationRow>();
-
-	const channel = supabase
-		.channel('cw-devices-updates')
-		.on(
-			'postgres_changes',
-			{ event: 'UPDATE', schema: 'public', table: 'cw_devices' },
-			async (payload) => {
-				await handlePayload(payload, supabase, appState, typeCache, locationCache);
-			}
-		)
-		.on(
-			'postgres_changes',
-			{ event: 'INSERT', schema: 'public', table: 'cw_devices' },
-			async (payload) => {
-				await handlePayload(payload, supabase, appState, typeCache, locationCache);
-			}
-		)
-		.subscribe();
-
-	return () => {
-		supabase.removeChannel(channel);
+type BroadcastChangePayload<Row> = {
+	event: string;
+	payload?: {
+		record?: Row | null;
+		old_record?: Row | null;
+		schema?: string;
+		table?: string;
+		operation?: string;
 	};
+};
+
+async function ensureRealtimeAuthToken(
+	client: SupabaseClient<Database>,
+	session?: AuthSession
+) {
+	const token = session?.access_token ?? null;
+	if (!token) return false;
+	await client.realtime.setAuth(token);
+	return true;
 }
 
-async function handlePayload(
-	payload: { new: Record<string, unknown> },
+async function hydrateAndUpsertDevice(
+	row: DeviceRow,
 	client: SupabaseClient<Database>,
 	appState: AppStateState,
 	typeCache: Map<number, DeviceTypeRow>,
 	locationCache: Map<number, LocationRow>
 ) {
-	const row = payload.new as DeviceRow;
-	if (!row?.dev_eui) return;
-
 	let device_type: DeviceTypeRow | null = null;
 	if (row.type != null) {
 		device_type = await fetchDeviceType(client, row.type, typeCache);
@@ -283,6 +287,10 @@ async function handlePayload(
 		location: location ?? undefined
 	});
 
+	upsertDeviceInState(appState, mapped);
+}
+
+function upsertDeviceInState(appState: AppStateState, mapped: Device) {
 	const idx = appState.devices.findIndex((d) => d.id === mapped.id);
 	if (idx >= 0) {
 		appState.devices = [
@@ -294,6 +302,146 @@ async function handlePayload(
 		appState.devices = [mapped, ...appState.devices];
 	}
 }
+
+function removeDeviceFromState(appState: AppStateState, devEui: string) {
+	const idx = appState.devices.findIndex((d) => d.id === devEui);
+	if (idx >= 0) {
+		appState.devices = [
+			...appState.devices.slice(0, idx),
+			...appState.devices.slice(idx + 1)
+		];
+	}
+}
+
+/**
+ * Subscribe to realtime inserts/updates on cw_devices and merge into appState.devices.
+ * Returns an unsubscribe function.
+ */
+export async function startDeviceRealtime(appState: AppStateState, session?: AuthSession) {
+	const supabase = await createSupabaseClient(session);
+	const typeCache = new Map<number, DeviceTypeRow>();
+	const locationCache = new Map<number, LocationRow>();
+	const broadcastCapable = await ensureRealtimeAuthToken(supabase, session);
+	
+	const channel = supabase.channel(
+		'cw_air_data',
+		broadcastCapable
+			? {
+				config: {
+					private: true,
+					broadcast: { self: false }
+				}
+			}
+			: undefined
+	);
+
+	if (broadcastCapable) {
+		channel
+			.on('broadcast', { event: 'INSERT' }, async (payload) => {
+				await handleBroadcastChange(
+					'INSERT',
+					payload as BroadcastChangePayload<DeviceRow>,
+					supabase,
+					appState,
+					typeCache,
+					locationCache
+				);
+			})
+			.on('broadcast', { event: 'UPDATE' }, async (payload) => {
+				await handleBroadcastChange(
+					'UPDATE',
+					payload as BroadcastChangePayload<DeviceRow>,
+					supabase,
+					appState,
+					typeCache,
+					locationCache
+				);
+			})
+			// .on('broadcast', { event: 'DELETE' }, async (payload) => {
+			// 	await handleBroadcastChange(
+			// 		'DELETE',
+			// 		payload as BroadcastChangePayload<DeviceRow>,
+			// 		supabase,
+			// 		appState,
+			// 		typeCache,
+			// 		locationCache
+			// 	);
+			// });
+	}
+
+	// channel
+	// 	.on(
+	// 		'postgres_changes',
+	// 		{ event: 'UPDATE', schema: 'public', table: 'cw_devices' },
+	// 		async (payload) => {
+	// 			await handlePayload('UPDATE', payload, supabase, appState, typeCache, locationCache);
+	// 		}
+	// 	)
+	// 	.on(
+	// 		'postgres_changes',
+	// 		{ event: 'INSERT', schema: 'public', table: 'cw_devices' },
+	// 		async (payload) => {
+	// 			await handlePayload('INSERT', payload, supabase, appState, typeCache, locationCache);
+	// 		}
+	// 	)
+	// 	.on(
+	// 		'postgres_changes',
+	// 		{ event: 'DELETE', schema: 'public', table: 'cw_devices' },
+	// 		async (payload) => {
+	// 			await handlePayload('DELETE', payload, supabase, appState, typeCache, locationCache);
+	// 		}
+	// 	)
+	// 	.subscribe();
+
+	// return () => {
+	// 	supabase.removeChannel(channel);
+	// };
+}
+
+async function handleBroadcastChange(
+	op: 'INSERT' | 'UPDATE' | 'DELETE',
+	payload: BroadcastChangePayload<DeviceRow>,
+	client: SupabaseClient<Database>,
+	appState: AppStateState,
+	typeCache: Map<number, DeviceTypeRow>,
+	locationCache: Map<number, LocationRow>
+) {
+	debugger;
+	const record = payload?.payload?.record ?? null;
+	const previous = payload?.payload?.old_record ?? null;
+	const target = (record ?? previous) as DeviceRow | null;
+	if (op === 'DELETE') {
+		const devEui = record?.dev_eui ?? previous?.dev_eui;
+		if (devEui) {
+			removeDeviceFromState(appState, devEui);
+		}
+		return;
+	}
+	if (!target?.dev_eui) return;
+	await hydrateAndUpsertDevice(target, client, appState, typeCache, locationCache);
+}
+
+// async function handlePayload(
+// 	op: 'INSERT' | 'UPDATE' | 'DELETE',
+// 	payload: { new: Record<string, unknown> | null; old?: Record<string, unknown> | null },
+// 	client: SupabaseClient<Database>,
+// 	appState: AppStateState,
+// 	typeCache: Map<number, DeviceTypeRow>,
+// 	locationCache: Map<number, LocationRow>
+// ) {
+// 	if (op === 'DELETE') {
+// 		const previous = (payload.old ?? payload.new) as DeviceRow | null;
+// 		if (previous?.dev_eui) {
+// 			removeDeviceFromState(appState, previous.dev_eui);
+// 		}
+// 		return;
+// 	}
+
+// 	const row = payload.new as DeviceRow | null;
+// 	if (!row?.dev_eui) return;
+
+// 	await hydrateAndUpsertDevice(row, client, appState, typeCache, locationCache);
+// }
 
 export async function fetchDevicePage({
 	limit = 50,
@@ -388,6 +536,52 @@ export async function loadInitialAppState(
 		profile: null,
 		userEmail: null
 	};
+}
+
+export async function fetchDataTableRows({
+	tab,
+	limit = 200,
+	session
+}: {
+	tab: DataTabKey;
+	limit?: number;
+	session?: AuthSession;
+}) {
+	const supabase = await createSupabaseClient(session);
+	const table = DATA_TABLE_MAP[tab];
+	const { data: deviceRows, error: deviceError } = await supabase
+		.from('cw_devices')
+		.select('dev_eui,device_type:cw_device_type(data_table_v2,data_table)')
+		.or(`data_table_v2.eq.${table},data_table.eq.${table}`, {
+			foreignTable: 'device_type'
+		});
+
+	if (deviceError) throw deviceError;
+
+	const devEuiSet = new Set(
+		(deviceRows ?? [])
+			.map((row) => row.dev_eui)
+			.filter((devEui): devEui is string => typeof devEui === 'string' && devEui.length > 0)
+	);
+	const devEuis = Array.from(devEuiSet);
+
+	if (!devEuis.length) return [] as DataTableRow[];
+
+	const rowLimit = Math.max(limit, devEuis.length);
+	const { data, error } = await supabase
+		.from(table)
+		.select('*')
+		.in('dev_eui', devEuis)
+		.order('created_at', { ascending: false, nulls: 'last' })
+		.limit(rowLimit);
+
+	if (error) throw error;
+	const latestByDevice = new Map<string, DataTableRow>();
+	for (const row of (data ?? []) as DataTableRow[]) {
+		if (!row?.dev_eui || latestByDevice.has(row.dev_eui)) continue;
+		latestByDevice.set(row.dev_eui, row);
+	}
+	return Array.from(latestByDevice.values());
 }
 
 export type DeviceHistoryPoint = {
