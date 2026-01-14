@@ -67,7 +67,7 @@
 
 	const containerClass = $derived.by(() =>
 		[
-			'relative w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900/80 shadow-lg shadow-black/30',
+			'relative w-full min-h-[72px] rounded-xl border border-slate-800 bg-slate-900/80 shadow-lg shadow-black/30',
 			className
 		]
 			.filter(Boolean)

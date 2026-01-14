@@ -1,17 +1,23 @@
 <script lang="ts">
-import { resolve } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import CWButton from '$lib/components/CWButton.svelte';
 	import CWBackButton from '$lib/components/CWBackButton.svelte';
 	import CWTable from '$lib/components/CWTable.svelte';
+	import ReportHistoryDialog from './ReportHistoryDialog.svelte';
+	import HISTORY_ICON from '$lib/images/icons/history.svg';
 	import type { PageData } from './$types';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 
 	let { data }: { data: PageData } = $props();
+	const supabase = $derived(data.supabase);
 
 	type ReportItem = (typeof data.reports)[number];
 
 	let selected = $state<number[]>([]);
+	let historyDialogOpen = $state(false);
+	let historyDevEui = $state<string | null>(null);
+	let historyDeviceLabel = $state('Device');
 
 	const toggleSelect = (id: number) => {
 		selected = selected.includes(id) ? selected.filter((i) => i !== id) : [...selected, id];
@@ -25,9 +31,12 @@ import { resolve } from '$app/paths';
 		selected = [];
 	};
 
-	const downloadReport = (report: ReportItem) => {
-		// TODO: replace with real download call
-		console.log('Download report', report.report_id);
+	const viewReportHistory = (report: ReportItem) => {
+		historyDevEui = report.dev_eui;
+		historyDeviceLabel = report.device_name
+			? `${report.device_name}`
+			: report.dev_eui;
+		historyDialogOpen = true;
 	};
 
 	const bulkDownload = () => {
@@ -38,21 +47,23 @@ import { resolve } from '$app/paths';
 
 	const currentPath = $derived($page.url.pathname);
 
-const reportItems = $derived(
-	data.reports.map((report) => ({
-		...report,
-		device_label: report.device_name ? `${report.device_name} (${report.dev_eui})` : report.dev_eui,
-		created_at_fmt: new Date(report.created_at).toLocaleString()
-	}))
-);
+	const reportItems = $derived(
+		data.reports.map((report) => ({
+			...report,
+			device_label: report.device_name
+				? `${report.device_name} (${report.dev_eui})`
+				: report.dev_eui,
+			created_at_fmt: new Date(report.created_at).toLocaleString()
+		}))
+	);
 
-const createReportUrl = $derived(resolve('/reports/create-report'));
+	const createReportUrl = $derived(resolve('/reports/create-report'));
 
-const reportColumns = [
-	{
-		key: 'select',
-		label: '',
-		width: '40px',
+	const reportColumns = [
+		{
+			key: 'select',
+			label: '',
+			width: '40px',
 			align: 'center'
 		},
 		{
@@ -112,7 +123,7 @@ const reportColumns = [
 		const url = item.location_id
 			? resolve(
 					`/locations/location/${item.location_id}/devices/device/${item.dev_eui}?prev=${currentPath}`
-			  )
+				)
 			: resolve(`/devices/${item.dev_eui}`);
 		if (typeof window !== 'undefined') window.location.href = url;
 	};
@@ -182,8 +193,9 @@ const reportColumns = [
 						<td class="px-2 md:px-3 py-2 text-slate-300">{item.created_at_fmt}</td>
 						<td class="px-2 md:px-3 py-2 text-right">
 							<div class="flex items-center justify-end gap-2">
-								<CWButton variant="ghost" size="sm" onclick={() => downloadReport(item)}>
-									Download
+								<CWButton variant="ghost" size="sm" onclick={() => viewReportHistory(item)}>
+									<img src={HISTORY_ICON} alt="History Icon" class="inline h-4 w-4 mr-1" />
+									Report History
 								</CWButton>
 								<CWButton
 									variant="ghost"
@@ -224,13 +236,29 @@ const reportColumns = [
 			{#snippet failed(error, reset)}
 				<div class="flex flex-col items-center justify-center py-12 text-center">
 					<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-900/30">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-8 w-8 text-rose-400"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+							/>
 						</svg>
 					</div>
 					<p class="text-rose-300 font-medium">Failed to load reports table</p>
-					<p class="mt-1 text-sm text-slate-400">{(error as Error)?.message || 'An unexpected error occurred'}</p>
-					<button onclick={reset} class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors">
+					<p class="mt-1 text-sm text-slate-400">
+						{(error as Error)?.message || 'An unexpected error occurred'}
+					</p>
+					<button
+						onclick={reset}
+						class="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-sm transition-colors"
+					>
 						Try again
 					</button>
 				</div>
@@ -238,3 +266,10 @@ const reportColumns = [
 		</svelte:boundary>
 	</div>
 </div>
+
+<ReportHistoryDialog
+	bind:open={historyDialogOpen}
+	devEui={historyDevEui}
+	deviceLabel={historyDeviceLabel}
+	{supabase}
+/>

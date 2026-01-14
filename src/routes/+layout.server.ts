@@ -27,6 +27,7 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
 		access_token: session.access_token,
 		refresh_token: session.refresh_token
 	};
+	console.log(tokens);
 
 	let profile: { id?: string; full_name?: string | null; avatar_url?: string | null; email?: string | null } | null = null;
 

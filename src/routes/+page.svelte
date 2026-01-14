@@ -55,6 +55,21 @@
 	let tableLoading: boolean = $state<boolean>(false);
 	let showAlertPanel = persisted('showAlertPanel', { open: true });
 
+	// Track screen size for proper view switching (ensures component remounting)
+	let isMobileView = $state(false);
+	
+	onMount(() => {
+		const mediaQuery = window.matchMedia('(max-width: 767px)');
+		isMobileView = mediaQuery.matches;
+		
+		const handleChange = (e: MediaQueryListEvent) => {
+			isMobileView = e.matches;
+		};
+		
+		mediaQuery.addEventListener('change', handleChange);
+		return () => mediaQuery.removeEventListener('change', handleChange);
+	});
+
 	// Status helpers
 	const statusConfig: Record<
 		DeviceStatus,
@@ -571,13 +586,46 @@
 			</div>
 
 			<section class="flex-1 min-h-0 overflow-hidden">
-				<div class="flex h-full min-h-0 flex-col overflow-hidden px-6 pb-6 pt-2">
+				<div class="flex h-full min-h-0 flex-col px-6 pb-6 pt-2">
 					<div
-						class="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900 mb-2"
+						class="relative flex h-full min-h-0 flex-col rounded-xl border border-slate-800 bg-slate-900 mb-2"
 					>
 						<svelte:boundary>
-							<div class="flex h-full min-h-0 flex-col">
-								<div class="hidden h-full min-h-0 flex-col md:flex">
+							{#if isMobileView}
+								<!-- Mobile card view -->
+								<div class="absolute inset-0 flex flex-col overflow-y-auto p-3">
+									<div class="flex flex-col gap-3 pb-4">
+										{#if tableLoading}
+											<div
+												class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300"
+											>
+												Loading devices...
+											</div>
+										{:else if tableRows?.length}
+											{#each tableRows as row, index (getRowKey(row, index))}
+												{@const item = buildMobileRowItem(row)}
+												<DeviceRowItem
+													name={item.name}
+													status={item.status}
+													primary={item.primary ?? null}
+													secondary={item.secondary ?? null}
+													details={item.details ?? []}
+													lastSeen={item.lastSeen ?? null}
+													detailHref={item.detailHref ?? ''}
+												/>
+											{/each}
+										{:else}
+											<div
+												class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-400"
+											>
+												No devices found.
+											</div>
+										{/if}
+									</div>
+								</div>
+							{:else}
+								<!-- Desktop table view -->
+								<div class="absolute inset-0 flex flex-col overflow-hidden">
 									<CWTable
 										items={tableRows}
 										columns={tableColumns}
@@ -590,35 +638,7 @@
 										virtual={tableRows?.length > 30}
 									/>
 								</div>
-
-							<div class="flex flex-col gap-3 md:hidden">
-								{#if tableLoading}
-									<div
-										class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300"
-									>
-										Loading devices...
-									</div>
-								{:else if tableRows?.length}
-									{#each tableRows as row, index (getRowKey(row, index))}
-										{@const item = buildMobileRowItem(row)}
-										<DeviceRowItem
-											name={item.name}
-											status={item.status}
-											primary={item.primary ?? null}
-											secondary={item.secondary ?? null}
-											details={item.details ?? []}
-											lastSeen={item.lastSeen ?? null}
-											detailHref={item.detailHref ?? ''}
-										/>
-									{/each}
-								{:else}
-									<div
-										class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-400"
-									>
-										No devices found.
-									</div>
-								{/if}
-							</div>
+							{/if}
 
 							{#snippet failed(error, reset)}
 								<div class="flex flex-col items-center justify-center py-12 text-center">
